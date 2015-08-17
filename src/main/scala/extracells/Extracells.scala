@@ -10,7 +10,7 @@ import cpw.mods.fml.common.event.{FMLInitializationEvent, FMLPostInitializationE
 import cpw.mods.fml.common.network.NetworkRegistry
 import extracells.integration.Integration
 import extracells.network.{ChannelHandler, GuiHandler}
-import extracells.proxy.CommonProxy
+import extracells.common.CommonProxy
 import extracells.registries.ItemEnum
 import extracells.render.RenderHandler
 import extracells.util.{ExtraCellsEventHandler, FluidCellHandler, NameHandler}
@@ -21,10 +21,10 @@ import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.common.config.Configuration
 
 @Mod(modid = "extracells", name = "Extra Cells", modLanguage = "scala", dependencies = "after:LogisticsPipes|Main;after:Waila;required-after:appliedenergistics2")
-object Extracells {
+object ExtraCells {
 
 
-	@SidedProxy(clientSide = "extracells.proxy.ClientProxy", serverSide = "extracells.proxy.CommonProxy")
+	@SidedProxy(clientSide = "extracells.client.ClientProxy", serverSide = "extracells.common.CommonProxy")
 	var proxy: CommonProxy = null
 
 	var VERSION = ""

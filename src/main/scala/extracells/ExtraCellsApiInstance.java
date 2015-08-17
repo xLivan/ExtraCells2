@@ -112,12 +112,12 @@ public class ExtraCellsApiInstance implements ExtraCellsApi {
 	@Override
 	@Deprecated
 	public String getVerion() {
-		return Extracells.VERSION();
+		return ExtraCells.VERSION();
 	}
 
 	@Override
 	public String getVersion() {
-		return Extracells.VERSION();
+		return ExtraCells.VERSION();
 	}
 
 	@Override

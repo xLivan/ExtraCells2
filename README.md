@@ -1,3 +1,5 @@
+This is my attempt at rewriting ExtraCells 2 to fix all the messy code, bugs and etc. in it. 
+
 ExtraCells 2
 ==========
 
