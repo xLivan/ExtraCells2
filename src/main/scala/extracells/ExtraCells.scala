@@ -9,6 +9,8 @@ import cpw.mods.fml.common.{FMLCommonHandler, Loader, Mod, SidedProxy}
 import cpw.mods.fml.common.event.{FMLInitializationEvent, FMLPostInitializationEvent, FMLPreInitializationEvent}
 import cpw.mods.fml.common.network.NetworkRegistry
 import extracells.common
+import extracells.common.grid.helper.FluidCellHandler
+import extracells.common.network.NetworkWrapper
 import extracells.common.registries.ItemEnum
 import extracells.common.integration.Integration
 import extracells.common.CommonProxy
@@ -57,7 +59,7 @@ object ExtraCells {
 		proxy.registerTileEntities
 		proxy.registerFluidBurnTimes
 		proxy.addRecipes(configFolder)
-		//ChannelHandler.registerMessages
+		NetworkWrapper.registerMessages()
 		RenderingRegistry.registerBlockHandler(new RenderHandler(RenderingRegistry.getNextAvailableRenderId))
 		integration.init
 	}
