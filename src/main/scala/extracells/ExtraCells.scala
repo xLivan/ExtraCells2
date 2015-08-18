@@ -8,10 +8,10 @@ import cpw.mods.fml.common.Mod.EventHandler
 import cpw.mods.fml.common.{FMLCommonHandler, Loader, Mod, SidedProxy}
 import cpw.mods.fml.common.event.{FMLInitializationEvent, FMLPostInitializationEvent, FMLPreInitializationEvent}
 import cpw.mods.fml.common.network.NetworkRegistry
+import extracells.common.registries.ItemEnum
 import extracells.integration.Integration
 import extracells.network.{ChannelHandler, GuiHandler}
 import extracells.common.CommonProxy
-import extracells.registries.ItemEnum
 import extracells.render.RenderHandler
 import extracells.util.{ExtraCellsEventHandler, FluidCellHandler, NameHandler}
 import extracells.wireless.AEWirelessTermHandler

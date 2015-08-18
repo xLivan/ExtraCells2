@@ -1,7 +1,5 @@
 package extracells.common.block
 
-import scala.annotation.switch
-
 import extracells.ExtraCells
 import extracells.common.tile.TileWalrus
 import net.minecraft.block.material.Material
@@ -45,7 +43,7 @@ class BlockWalrus extends Block(Material.clay) with ITileEntityProvider  {
       case ForgeDirection.EAST => setBlockBounds(0.0F, 0.0F, 0.0F, 2.0F, 1.0F, 1.0F)
       case ForgeDirection.SOUTH => setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 2.0F)
       case ForgeDirection.WEST => setBlockBounds(-1.0F, 0.0F,0.0F, 1.0F, 1.0F, 1.0F)
-      case whoa => setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F)
+      case _ => setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F)
     }
   }
 }

@@ -24,7 +24,7 @@ class CommonProxy {
   }
 
   def addRecipes(configFolder: File) {
-    val recipeHandler = AEApi.instance()
+    val recipeHandler: IRecipeHandler = AEApi.instance()
       .registries()
       .recipes()
       .createNewRecipehandler()
