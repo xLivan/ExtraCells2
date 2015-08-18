@@ -7,13 +7,13 @@ import appeng.api.AEApi
 import appeng.api.implementations.IPowerChannelState
 import appeng.api.networking.events.{MENetworkPowerStatusChange, MENetworkEventSubscribe}
 import appeng.api.networking.security.IActionHost
-import appeng.api.networking.{IGridHost, IGridNode}
+import appeng.api.networking.IGridNode
 import appeng.api.parts._
 import appeng.api.util.{AECableType, AEColor, DimensionalCoord}
 import cpw.mods.fml.common.FMLCommonHandler
 import cpw.mods.fml.relauncher.{Side, SideOnly}
-import extracells.common.networking.{IGridProxyable, ECGridProxy}
-import extracells.render.TextureManager
+import extracells.common.grid.{TGridProxyable, ECGridProxy}
+import extracells.client.render.TextureManager
 import io.netty.buffer.ByteBuf
 import net.minecraft.client.renderer.{Tessellator, RenderBlocks}
 import net.minecraft.entity.player.EntityPlayer
@@ -23,7 +23,7 @@ import net.minecraft.tileentity.TileEntity
 import net.minecraft.util.IIcon
 import net.minecraftforge.common.util.ForgeDirection
 
-abstract class PartECBase extends IPart with IGridProxyable with IActionHost with IPowerChannelState {
+abstract class PartECBase extends IPart with TGridProxyable with IActionHost with IPowerChannelState {
   protected var node: IGridNode = _
   protected var host: IPartHost = _
   protected var tile: TileEntity = _
@@ -180,12 +180,12 @@ abstract class PartECBase extends IPart with IGridProxyable with IActionHost wit
 
     ts.setBrightness(13 << 20 | 13 << 4)
     rh.setInvColor(AEColor.Transparent.blackVariant)
-    rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures(1), ForgeDirection.UP, renderer)
-    rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures(1), ForgeDirection.DOWN, renderer)
-    rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures(1), ForgeDirection.NORTH, renderer)
-    rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures(1), ForgeDirection.EAST, renderer)
-    rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures(1), ForgeDirection.SOUTH, renderer)
-    rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures(1), ForgeDirection.WEST, renderer)
+    rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()(1), ForgeDirection.UP, renderer)
+    rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()(1), ForgeDirection.DOWN, renderer)
+    rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()(1), ForgeDirection.NORTH, renderer)
+    rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()(1), ForgeDirection.EAST, renderer)
+    rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()(1), ForgeDirection.SOUTH, renderer)
+    rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()(1), ForgeDirection.WEST, renderer)
   }
 
 }

@@ -8,12 +8,13 @@ import cpw.mods.fml.common.Mod.EventHandler
 import cpw.mods.fml.common.{FMLCommonHandler, Loader, Mod, SidedProxy}
 import cpw.mods.fml.common.event.{FMLInitializationEvent, FMLPostInitializationEvent, FMLPreInitializationEvent}
 import cpw.mods.fml.common.network.NetworkRegistry
+import extracells.common
 import extracells.common.registries.ItemEnum
-import extracells.integration.Integration
-import extracells.network.{ChannelHandler, GuiHandler}
+import extracells.common.integration.Integration
 import extracells.common.CommonProxy
 import extracells.render.RenderHandler
-import extracells.util.{ExtraCellsEventHandler, FluidCellHandler, NameHandler}
+import extracells.common.ECEventHandler
+import extracells.util.{FluidCellHandler, NameHandler}
 import extracells.wireless.AEWirelessTermHandler
 import net.minecraft.creativetab.CreativeTabs
 import net.minecraft.item.ItemStack
@@ -44,11 +45,11 @@ object ExtraCells {
 	}
 
 	@EventHandler
-	def init(event: FMLInitializationEvent) {
+	def init(event: FMLInitializationEvent) : Unit = {
 		AEApi.instance.registries.recipes.addNewSubItemResolver(new NameHandler)
 		AEApi.instance.registries.wireless.registerWirelessHandler(new AEWirelessTermHandler)
 		AEApi.instance.registries.cell.addCellHandler(new FluidCellHandler)
-		val handler = new ExtraCellsEventHandler
+		val handler = new ECEventHandler
 		FMLCommonHandler.instance.bus.register(handler)
 		MinecraftForge.EVENT_BUS.register(handler)
 		proxy.registerMovables
@@ -56,22 +57,22 @@ object ExtraCells {
 		proxy.registerTileEntities
 		proxy.registerFluidBurnTimes
 		proxy.addRecipes(configFolder)
-		ChannelHandler.registerMessages
+		//ChannelHandler.registerMessages
 		RenderingRegistry.registerBlockHandler(new RenderHandler(RenderingRegistry.getNextAvailableRenderId))
 		integration.init
 	}
 
 	@EventHandler
-	def postInit(event: FMLPostInitializationEvent) {
+	def postInit(event: FMLPostInitializationEvent) : Unit = {
 		integration.postInit
 	}
 
 	@EventHandler
-	def preInit(event: FMLPreInitializationEvent) {
+	def preInit(event: FMLPreInitializationEvent) : Unit = {
 		VERSION = Loader.instance.activeModContainer.getVersion
 		configFolder = event.getModConfigurationDirectory
 
-		NetworkRegistry.INSTANCE.registerGuiHandler(this, GuiHandler)
+		//NetworkRegistry.INSTANCE.registerGuiHandler(this, GuiHandler)
 
 
 

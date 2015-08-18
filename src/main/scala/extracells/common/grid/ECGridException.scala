@@ -1,4 +1,4 @@
-package extracells.common.networking
+package extracells.common.grid
 
 class ECGridException extends Exception{
 

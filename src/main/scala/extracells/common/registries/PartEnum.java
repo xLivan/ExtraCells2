@@ -1,7 +1,7 @@
 package extracells.common.registries;
 
 import appeng.api.config.Upgrades;
-import extracells.part.*;
+import extracells.common.part.*;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.StatCollector;
 import org.apache.commons.lang3.tuple.MutablePair;

@@ -47,7 +47,7 @@ class CommonProxy {
   }
 
   //AE Spatial IO
-  def registerMovable() {
+  def registerMovables() {
     val api: IAppEngApi = AEApi.instance()
   }
 
