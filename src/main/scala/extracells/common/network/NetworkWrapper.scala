@@ -17,19 +17,19 @@ object NetworkWrapper {
     }
   }
 
-  def sendToServer(message: PacketBase) : Unit =
+  def sendToServer(message: AbstractPacketBase) : Unit =
     CHANNEL.sendToServer(message)
 
-  def sendToAll(message: PacketBase): Unit =
+  def sendToAll(message: AbstractPacketBase): Unit =
     CHANNEL.sendToAll(message)
 
-  def sendToDimension(message: PacketBase, dimId: Int): Unit =
+  def sendToDimension(message: AbstractPacketBase, dimId: Int): Unit =
     CHANNEL.sendToDimension(message, dimId)
 
-  def sendToPlayersAround(message: PacketBase, point: TargetPoint): Unit =
+  def sendToPlayersAround(message: AbstractPacketBase, point: TargetPoint): Unit =
     CHANNEL.sendToAllAround(message, point)
 
-  def sendToPlayer(message: PacketBase, player: EntityPlayerMP) : Unit =
+  def sendToPlayer(message: AbstractPacketBase, player: EntityPlayerMP) : Unit =
     CHANNEL.sendTo(message, player)
 
   def sendPacketToWorld(packet: Packet, world: World): Unit = {

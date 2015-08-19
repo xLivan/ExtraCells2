@@ -1,7 +1,7 @@
-package extracells.common.container
+package extracells.common.util
 
 import net.minecraftforge.fluids.Fluid
 
-trait TFluidSelectorContainer {
+trait TFluidSelector {
   def setSelectedFluid(fluid: Fluid) : Unit
 }
