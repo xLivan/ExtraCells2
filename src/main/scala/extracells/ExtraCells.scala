@@ -7,8 +7,6 @@ import cpw.mods.fml.client.registry.RenderingRegistry
 import cpw.mods.fml.common.Mod.EventHandler
 import cpw.mods.fml.common.{FMLCommonHandler, Loader, Mod, SidedProxy}
 import cpw.mods.fml.common.event.{FMLInitializationEvent, FMLPostInitializationEvent, FMLPreInitializationEvent}
-import cpw.mods.fml.common.network.NetworkRegistry
-import extracells.common
 import extracells.common.grid.helper.FluidCellHandler
 import extracells.common.network.NetworkWrapper
 import extracells.common.registries.ItemEnum
@@ -16,7 +14,7 @@ import extracells.common.integration.Integration
 import extracells.common.CommonProxy
 import extracells.render.RenderHandler
 import extracells.common.ECEventHandler
-import extracells.util.{FluidCellHandler, NameHandler}
+import extracells.util.NameHandler
 import extracells.wireless.AEWirelessTermHandler
 import net.minecraft.creativetab.CreativeTabs
 import net.minecraft.item.ItemStack
