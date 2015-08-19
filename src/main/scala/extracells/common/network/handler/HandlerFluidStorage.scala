@@ -14,7 +14,8 @@ class HandlerFluidStorage extends IMessageHandler[PacketFluidStorage, IMessage] 
       case Side.SERVER => ctx.getServerHandler.playerEntity
       case Side.CLIENT => Minecraft.getMinecraft.thePlayer
     }
-    //Side checking
+
+    //Side checking so packet modes only go one way.
     (ctx.side, message.getMode) match {
       case (Side.CLIENT, 0) => return
       case (Side.SERVER, 2) => return

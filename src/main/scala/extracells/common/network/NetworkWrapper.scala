@@ -9,11 +9,13 @@ import net.minecraft.world.World
 
 object NetworkWrapper {
   private val CHANNEL: SimpleNetworkWrapper = NetworkRegistry.INSTANCE.newSimpleChannel("extracells")
+  private var currentDiscriminator: Int = 0
 
   def registerMessages(): Unit = {
     for ( messageType <- MessageEnum.values) {
       CHANNEL.registerMessage(messageType.handlerClass,
-        messageType.messageClass, messageType.discriminator, messageType.side)
+        messageType.messageClass, currentDiscriminator, messageType.side)
+      currentDiscriminator += 1
     }
   }
 
