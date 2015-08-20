@@ -2,6 +2,7 @@ package extracells.common.grid.inventory
 
 import java.util.{ArrayList => JavaArrayList, List => JavaList}
 
+import appeng.api.AEApi
 import appeng.api.config.{AccessRestriction, Actionable}
 import appeng.api.networking.security.BaseActionSource
 import appeng.api.storage.data.{IAEFluidStack, IItemList}
@@ -22,8 +23,8 @@ import scala.collection.mutable
  * Note: Except for loading NBT data, all operations to stored fluids must go through
  * the FluidSet wrapper. This should ensure consistency between NBT and actual data.
  *
- * @param storageStack
- * @param saveProvider
+ * @param storageStack ItemStack of storage cell
+ * @param saveProvider save provider
  */
 
 class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISaveProvider) extends IMEInventoryHandler[IAEFluidStack] with IHandlerFluidStorage{
@@ -38,7 +39,7 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
       tag
     }
   protected var storedFluids: FluidSet = _
-  private var prioritizedFluids: JavaList[Fluid] = new JavaArrayList[Fluid]()
+  private var preformatList: JavaList[Fluid] = new JavaArrayList[Fluid]()
   val bytesPerType: Int = storageStack.getItem.asInstanceOf[IFluidStorageCell].getBytesPerType(storageStack)
   val totalTypes: Int = storageStack.getItem.asInstanceOf[IFluidStorageCell].getMaxTypes(storageStack)
   val totalBytes: Int = storageStack.getItem.asInstanceOf[IFluidStorageCell].getMaxBytes(storageStack)
@@ -46,76 +47,102 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
 
   loadNBTTag()
 
-  def this(storageStack: ItemStack, saveProvider: ISaveProvider, filter: JavaList[Fluid]) {
+  def this(storageStack: ItemStack, saveProvider: ISaveProvider, preformat: JavaList[Fluid]) {
     this(storageStack, saveProvider)
-    if (filter != null)
-      this.prioritizedFluids = filter
+    if (preformat != null)
+      this.preformatList = preformat
   }
 
 
   override def injectItems(input: IAEFluidStack, mode: Actionable, source: BaseActionSource): IAEFluidStack = {
-    lazy val fluidIndex = this.storedFluids.search(input.getFluid)
+    lazy val storedFluid = this.storedFluids.getFluid(input.getFluid)
     var requiredBytes: Int = 0
 
     //Check if can inject
     if (input == null || !isAllowedByFormat(input.getFluid))
       return input
-    if (fluidIndex == -1) {
+    if (storedFluid.isEmpty) {
       //Out of types, can't accept!
-      if (this.storedFluids.length >= this.totalTypes)
+      if (this.storedFluids.getSize >= this.totalTypes)
         return input
       requiredBytes += bytesPerType
     }
     requiredBytes += input.getStackSize.toInt
 
     if (requiredBytes <= this.freeBytes) { //If required space fits in free space
-      if (fluidIndex == -1) //If type is not already in storage
+      if (storedFluid.isEmpty) //If type is not already in storage
         if (mode == Actionable.MODULATE)
-          this.storedFluids.add(input.getFluidStack)
+          this.storedFluids.updateFluid(input.getFluidStack)
       else { //If type is already in storage
         if (mode == Actionable.MODULATE) {
-          val fluidStack = this.storedFluids.get(fluidIndex)
+          val fluidStack = storedFluid.get
           fluidStack.amount += input.getStackSize.toInt
-          this.storedFluids.set(fluidIndex, fluidStack)
+          this.storedFluids.updateFluid(fluidStack)
         }
       }
       return null
     }
     else { //If it will not fit
-      var amountInjected;
-      if (fluidIndex == -1) { //If type is not already in storage
+      var amountInjected
+      if (storedFluid.isEmpty) { //If type is not already in storage
         amountInjected = this.freeBytes - this.bytesPerType
         if (mode == Actionable.MODULATE) {
           val fluidStack = new FluidStack(input.getFluid, amountInjected)
-          this.storedFluids.add(fluidStack)
+          this.storedFluids.updateFluid(fluidStack)
         }
       }
       else { //If type is already in storage
         amountInjected = this.freeBytes
         if (mode == Actionable.MODULATE) {
-          val fluidStack = this.storedFluids.get(fluidIndex)
+          val fluidStack = storedFluid.get
           fluidStack.amount += amountInjected
-          this.storedFluids.set(fluidIndex, fluidStack)
+          this.storedFluids.updateFluid(fluidStack)
         }
       }
       input.setStackSize(input.getStackSize - amountInjected)
       return input
     }
-
-
   }
 
-  override def extractItems(stackType: IAEFluidStack, actionable: Actionable, baseActionSource: BaseActionSource): IAEFluidStack = ???
-  override def getAvailableItems(iItemList: IItemList[IAEFluidStack]): IItemList[IAEFluidStack] = ???
+  override def extractItems(request: IAEFluidStack, mode: Actionable, src: BaseActionSource): IAEFluidStack = {
+    lazy val requestedFluid = this.storedFluids.getFluid(request.getFluid)
+    lazy val extractedFluid = request.copy()
+
+    if (request == null || requestedFluid.isEmpty)
+      return null
+
+    if (request.getStackSize < requestedFluid.get.amount) {
+      val stack = requestedFluid.get
+      if (mode == Actionable.MODULATE) {
+        stack.amount -= request.getStackSize
+        this.storedFluids.updateFluid(stack)
+      }
+      return extractedFluid
+    }
+    else {
+      val stack = requestedFluid.get
+      extractedFluid.setStackSize(stack.amount)
+      if (mode == Actionable.MODULATE) {
+        this.storedFluids.removeFluid(stack.getFluid)
+      }
+      return extractedFluid
+    }
+  }
+
+  override def getAvailableItems(out: IItemList[IAEFluidStack]): IItemList[IAEFluidStack] = {
+    for (stack: FluidStack <- this.storedFluids if stack != null)
+      out.add(AEApi.instance.storage.createFluidStack(stack))
+    out
+  }
 
   def isAllowedByFormat(input: Fluid): Boolean =
-    !isFormatted || this.prioritizedFluids.contains(input)
+    !isFormatted || this.preformatList.contains(input)
   override def isPrioritized(input: IAEFluidStack): Boolean = input != null &&
-    this.prioritizedFluids.contains(input.getFluid)
+    this.preformatList.contains(input.getFluid)
   override def isFormatted: Boolean = {
-    if (this.prioritizedFluids.isEmpty)
+    if (this.preformatList.isEmpty)
       return false
-    for (fluid: Fluid <- this.prioritizedFluids if fluid != null)
+    for (fluid: Fluid <- this.preformatList if fluid != null)
       return true
   }
   override def canAccept(input: IAEFluidStack): Boolean = {
@@ -128,12 +155,13 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
         return this.isAllowedByFormat(input.getFluid)
     false
   }
-  override def validForPass(i: Int): Boolean = ???
+  override def validForPass(i: Int): Boolean = true //TODO: Implement
 
-  override def getSlot: Int = ???
-  override def getPriority: Int = ???
-  override def getAccess: AccessRestriction = ???
-  override def getChannel: StorageChannel = ???
+  //TODO: Add support for priority, access restriction, and slot blink
+  override def getSlot: Int = 0
+  override def getPriority: Int = 0
+  override def getAccess: AccessRestriction = AccessRestriction.READ_WRITE
+  override def getChannel: StorageChannel = StorageChannel.FLUIDS
 
   def freeBytes: Int = {
     var i: Int = 0
@@ -153,40 +181,35 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
     this.stackTag.getInteger(this.tagVersionKey) match {
       //Original EC2 format, maintained for backwards compatibility.
       case 0 => this.storedFluids = new FluidSet(new NBTTagList)
-        for (slot: Int <- 0 until this.totalTypes) {
-          val tagKey = "Fluid#" + slot
-          val fluidStack = FluidStack.loadFluidStackFromNBT(this.stackTag.getCompoundTag(tagKey))
-          if (fluidStack != null)
-            this.storedFluids.updateFluid(fluidStack)
-          this.stackTag.removeTag(tagKey)
-        }
-        updateNBTTagVersion()
+        loadLegacyTag()
       //Current format
-      case 1 =>
-        this.storedFluids = new FluidSet(this.stackTag.getTagList(this.tagStoredFluids,Constants.NBT.TAG_COMPOUND))
-        this.stackTag.setTag(this.tagStoredFluids, this.storedFluids.fluidsTag)
-
+      case 1 => this.storedFluids = new FluidSet(this.stackTag.getTagList(this.tagStoredFluids,Constants.NBT.TAG_COMPOUND))
     }
+    this.stackTag.setTag(this.tagStoredFluids, this.storedFluids.fluidsTag)
   }
 
-  private def updateNBTTagVersion(): Unit = {
-    this.stackTag.setInteger(this.tagStoredFluids, this.tagVersion)
-    this.stackTag.setTag(this.tagStoredFluids, this.storedFluids.fluidsTag)
-    for (fluidStack: FluidStack <- this.storedFluids) {
-      val tag = new NBTTagCompound()
-      fluidStack.writeToNBT(tag)
-      this.storedFluids.fluidsTag.appendTag(tag)
+  private def loadLegacyTag(): Unit = {
+    this.stackTag.setInteger(this.tagVersionKey, this.tagVersion)
+    for (slot: Int <- 0 until this.totalTypes) {
+      val tagKey = "Fluid#" + slot
+      val fluidStack = FluidStack.loadFluidStackFromNBT(this.stackTag.getCompoundTag(tagKey))
+      if (fluidStack != null)
+        this.storedFluids.updateFluid(fluidStack)
+      this.stackTag.removeTag(tagKey)
     }
   }
 
   /**
-   * Basically a wrapper around ArrayList so that operations
+   * Basically a wrapper class that manages a NBTTagList
    * will update the NBT tag at the same time.
+   *
+   * If fluids changed from iterator,
+   * call syncNBT to sync to NBT
    *
    * @param fluidsTag
    */
-  private class FluidSet(val fluidsTag: NBTTagList) {
-    val fluidsMap = new mutable.HashMap[Fluid, (FluidStack, NBTTagCompound)]()
+  private class FluidSet(val fluidsTag: NBTTagList) extends mutable.Iterable[FluidStack] {
+    private[this] val fluidsMap = new mutable.HashMap[Fluid, (FluidStack, NBTTagCompound)]()
     for (i <- 0 until fluidsTag.tagCount()) {
       val tag = fluidsTag.getCompoundTagAt(i)
       val fluidStack = FluidStack.loadFluidStackFromNBT(tag)
@@ -238,5 +261,10 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
     }
 
     def getSize = fluidsMap.size
+
+    def syncNBT(): Unit = for((stack, nbt) <- fluidsMap.values)
+      stack.writeToNBT(nbt)
+
+    override def iterator = fluidsMap.values.unzip._1.iterator
   }
 }
