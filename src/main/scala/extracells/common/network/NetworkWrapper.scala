@@ -11,6 +11,9 @@ object NetworkWrapper {
   private val CHANNEL: SimpleNetworkWrapper = NetworkRegistry.INSTANCE.newSimpleChannel("extracells")
   private var currentDiscriminator: Int = 0
 
+  /**
+   * Registers all packets listed in [[MessageEnum]](
+   */
   def registerMessages(): Unit = {
     for ( messageType <- MessageEnum.values) {
       CHANNEL.registerMessage(messageType.handlerClass,
@@ -19,23 +22,46 @@ object NetworkWrapper {
     }
   }
 
+  /**
+   * Sends a packet to server
+   *
+   * @param message
+   */
   def sendToServer(message: AbstractPacketBase) : Unit =
     CHANNEL.sendToServer(message)
 
+  /**
+   * Sends a packet to all players on server
+   *
+   * @param message
+   */
   def sendToAll(message: AbstractPacketBase): Unit =
     CHANNEL.sendToAll(message)
 
+  /**
+   * Sends a packet to all players in a dimension
+   *
+   * @param message
+   * @param dimId
+   */
   def sendToDimension(message: AbstractPacketBase, dimId: Int): Unit =
     CHANNEL.sendToDimension(message, dimId)
 
+  /**
+   * Send a packet to all players around a point
+   *
+   * @param message
+   * @param point
+   */
   def sendToPlayersAround(message: AbstractPacketBase, point: TargetPoint): Unit =
     CHANNEL.sendToAllAround(message, point)
 
+  /**
+   * Sends a packet to a player
+   *
+   * @param message
+   * @param player
+   */
   def sendToPlayer(message: AbstractPacketBase, player: EntityPlayerMP) : Unit =
     CHANNEL.sendTo(message, player)
-
-  def sendPacketToWorld(packet: Packet, world: World): Unit = {
-    for (player: Object <- world.playerEntities if (player.isInstanceOf[EntityPlayerMP]))
-      player.asInstanceOf[EntityPlayerMP].playerNetServerHandler.sendPacket(packet)
-  }
 }

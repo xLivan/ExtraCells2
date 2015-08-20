@@ -4,13 +4,13 @@ import appeng.api.util.AEItemDefinition;
 
 public interface IBlockDefinition {
 
-	AEItemDefinition blockInterface();
+    AEItemDefinition blockInterface();
 
-	AEItemDefinition certusTank();
+    AEItemDefinition certusTank();
 
-	AEItemDefinition fluidCrafter();
+    AEItemDefinition fluidCrafter();
 
-	AEItemDefinition fluidFiller();
+    AEItemDefinition fluidFiller();
 
-	AEItemDefinition walrus();
+    AEItemDefinition walrus();
 }

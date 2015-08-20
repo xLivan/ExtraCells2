@@ -18,11 +18,10 @@ class ContainerFluidStorage extends ContainerECBase
 
   var hasWirelessTermHandler: Boolean = _
 
-
   def forceFluidUpdate(): Unit = ???
   def doWork(): Unit = ???
 
-  def canInteractWith(player: EntityPlayer) : Boolean = ???
+  override def canInteractWith(player: EntityPlayer) : Boolean = ???
   override def isValid(verificationToken: scala.Any): Boolean = ???
 
   def receiveSelectedFluid(fluid: Fluid): Unit = ???

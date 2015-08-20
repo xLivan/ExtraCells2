@@ -6,7 +6,7 @@ import net.minecraft.client.renderer.texture.IIconRegister
 import net.minecraft.item.{Item, ItemStack}
 import net.minecraft.nbt.NBTTagCompound
 
-abstract class ItemStorageBase extends Item with ICellWorkbenchItem{
+abstract class ItemCellBase extends Item with ICellWorkbenchItem{
   protected val iconPrefix: String
 
   override def isEditable(itemStack: ItemStack): Boolean = if (itemStack == null) false

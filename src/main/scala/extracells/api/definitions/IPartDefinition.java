@@ -4,29 +4,29 @@ import appeng.api.util.AEItemDefinition;
 
 public interface IPartDefinition {
 
-	AEItemDefinition partBattery();
+    AEItemDefinition partBattery();
 
-	AEItemDefinition partConversionMonitor();
+    AEItemDefinition partConversionMonitor();
 
-	AEItemDefinition partDrive();
+    AEItemDefinition partDrive();
 
-	AEItemDefinition partFluidAnnihilationPlane();
+    AEItemDefinition partFluidAnnihilationPlane();
 
-	AEItemDefinition partFluidExportBus();
+    AEItemDefinition partFluidExportBus();
 
-	AEItemDefinition partFluidFormationPlane();
+    AEItemDefinition partFluidFormationPlane();
 
-	AEItemDefinition partFluidImportBus();
+    AEItemDefinition partFluidImportBus();
 
-	AEItemDefinition partFluidLevelEmitter();
+    AEItemDefinition partFluidLevelEmitter();
 
-	AEItemDefinition partFluidStorageBus();
+    AEItemDefinition partFluidStorageBus();
 
-	AEItemDefinition partFluidTerminal();
+    AEItemDefinition partFluidTerminal();
 
-	AEItemDefinition partInterface();
+    AEItemDefinition partInterface();
 
-	AEItemDefinition partOreDictExportBus();
+    AEItemDefinition partOreDictExportBus();
 
-	AEItemDefinition partStorageMonitor();
+    AEItemDefinition partStorageMonitor();
 }

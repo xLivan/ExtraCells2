@@ -15,7 +15,7 @@ import net.minecraft.util.{MathHelper, IIcon}
 import net.minecraft.world.World
 import net.minecraftforge.fluids.Fluid
 
-class ItemStorageFluid extends ItemStorageBase with IFluidStorageCell{
+class ItemFluidCell extends ItemCellBase with IFluidStorageCell{
   val suffixes: Array[String] = Array("1k", "4k", "16k", "64k", "256k", "1024k", "4096k")
   val spaces: Array[Int] = Array(1024, 4096, 16348, 65536, 262144, 1048576, 4194304)
   lazy val icons: Array[IIcon] = new Array[IIcon](suffixes.length)

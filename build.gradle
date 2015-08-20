@@ -47,6 +47,7 @@ logger.lifecycle "$archivesBaseName-$version"
 logger.lifecycle "" + version
 
 minecraft {
+    mappings = "${config.version.mappings}"
     version = "${config.version.minecraft}-${config.version.forge}-${config.version.minecraft}"
     runDir = "../../MinecraftDebug/run_client"
 }
