@@ -1,27 +1,26 @@
 package extracells.common.grid.inventory
 
-import net.minecraftforge.common.util.Constants
-
-import scala.collection.mutable
-import scala.collection.mutable.Stack
 import java.util.{ArrayList => JavaArrayList, List => JavaList}
 
 import appeng.api.config.{AccessRestriction, Actionable}
 import appeng.api.networking.security.BaseActionSource
 import appeng.api.storage.data.{IAEFluidStack, IItemList}
-import appeng.api.storage.{ISaveProvider, IMEInventoryHandler, StorageChannel}
-import extracells.api.{IFluidStorageCell, ECApi, IHandlerFluidStorage}
+import appeng.api.storage.{IMEInventoryHandler, ISaveProvider, StorageChannel}
+import extracells.api.{ECApi, IFluidStorageCell, IHandlerFluidStorage}
 import extracells.common.container.implementations.ContainerFluidStorage
 import net.minecraft.item.ItemStack
-import net.minecraft.nbt.{NBTTagList, NBTTagCompound}
+import net.minecraft.nbt.{NBTTagCompound, NBTTagList}
+import net.minecraftforge.common.util.Constants
 import net.minecraftforge.fluids.{Fluid, FluidStack}
+
+import scala.collection.mutable
 
 /**
  * Fluid Cell Handler
  *
  * Tag Version 1
  * Note: Except for loading NBT data, all operations to stored fluids must go through
- * the FluidList wrapper. This should ensure consistency between NBT and actual data.
+ * the FluidSet wrapper. This should ensure consistency between NBT and actual data.
  *
  * @param storageStack
  * @param saveProvider
@@ -38,7 +37,7 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
       storageStack.setTagCompound(tag)
       tag
     }
-  protected var storedFluids: FluidList = _
+  protected var storedFluids: FluidSet = _
   private var prioritizedFluids: JavaList[Fluid] = new JavaArrayList[Fluid]()
   val bytesPerType: Int = storageStack.getItem.asInstanceOf[IFluidStorageCell].getBytesPerType(storageStack)
   val totalTypes: Int = storageStack.getItem.asInstanceOf[IFluidStorageCell].getMaxTypes(storageStack)
@@ -105,6 +104,7 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
 
 
   }
+
   override def extractItems(stackType: IAEFluidStack, actionable: Actionable, baseActionSource: BaseActionSource): IAEFluidStack = ???
   override def getAvailableItems(iItemList: IItemList[IAEFluidStack]): IItemList[IAEFluidStack] = ???
 
@@ -137,48 +137,35 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
 
   def freeBytes: Int = {
     var i: Int = 0
-    for (stack: FluidStack <- this.storedFluids if (stack != null))
+    for (stack: FluidStack <- this.storedFluids if stack != null)
       i += stack.amount
     this.totalBytes - i
   }
   override def usedBytes(): Int = this.totalBytes - this.freeBytes
   override def usedTypes(): Int = {
     var count: Int = 0
-    for (stack: FluidStack <- this.storedFluids if (stack != null))
+    for (stack: FluidStack <- this.storedFluids if stack != null)
       count += 1
     count
-  }
-
-  protected def updateStoredFluid(index: Int, fluidStack: FluidStack): Unit = {
-      if(fluidStack != null && fluidStack.getFluidID > 0 && fluidStack.amount > 0)
-        this.storedFluids.set(index, fluidStack)
-      else
-        this.storedFluids.remove(index)
   }
 
   private def loadNBTTag(): Unit = {
     this.stackTag.getInteger(this.tagVersionKey) match {
       //Original EC2 format, maintained for backwards compatibility.
-      case 0 => this.storedFluids = new FluidList(new NBTTagList)
+      case 0 => this.storedFluids = new FluidSet(new NBTTagList)
         for (slot: Int <- 0 until this.totalTypes) {
-          val fluidStack = FluidStack.loadFluidStackFromNBT(this.stackTag.getCompoundTag("Fluid#" + slot))
+          val tagKey = "Fluid#" + slot
+          val fluidStack = FluidStack.loadFluidStackFromNBT(this.stackTag.getCompoundTag(tagKey))
           if (fluidStack != null)
-            this.storedFluids.add(fluidStack)
+            this.storedFluids.updateFluid(fluidStack)
+          this.stackTag.removeTag(tagKey)
         }
         updateNBTTagVersion()
       //Current format
       case 1 =>
-        this.storedFluids = new FluidList(this.stackTag.getTagList(this.tagStoredFluids,Constants.NBT.TAG_COMPOUND))
+        this.storedFluids = new FluidSet(this.stackTag.getTagList(this.tagStoredFluids,Constants.NBT.TAG_COMPOUND))
         this.stackTag.setTag(this.tagStoredFluids, this.storedFluids.fluidsTag)
-        //Because 63 types is the maximum AE allows.
-        //Also, larger then maxTypes is allowed for maybe map makers to preload fluids via NBT.
-        for (index <- 0 until this.storedFluids.fluidsTag.tagCount if index < 63) {
-          val fluidStack = FluidStack.loadFluidStackFromNBT(this.storedFluids.fluidsTag.getCompoundTagAt(index))
-          if (fluidStack != null)
-            this.storedFluids.add(fluidStack)
-          else // Remove invalid fluid from tag.
-            this.storedFluids.fluidsTag.removeTag(index)
-        }
+
     }
   }
 
@@ -198,48 +185,58 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
    *
    * @param fluidsTag
    */
-  private class FluidList(val fluidsTag: NBTTagList) {
-    val fluidsList = new JavaArrayList[FluidStack]()
+  private class FluidSet(val fluidsTag: NBTTagList) {
+    val fluidsMap = new mutable.HashMap[Fluid, (FluidStack, NBTTagCompound)]()
+    for (i <- 0 until fluidsTag.tagCount()) {
+      val tag = fluidsTag.getCompoundTagAt(i)
+      val fluidStack = FluidStack.loadFluidStackFromNBT(tag)
+      if (fluidStack != null)
+        fluidsMap.put(fluidStack.getFluid, (fluidStack, tag))
+      else
+        fluidsTag.removeTag(i)
+    }
 
-    def add(stack: FluidStack): Unit = add(stack, true)
-    def add(stack: FluidStack, updateNBT: Boolean): Unit = {
-      fluidsList.add(stack)
-      if (updateNBT) {
-        val tag = new NBTTagCompound
-        stack.writeToNBT(tag)
+    def updateFluid(stack: FluidStack): Unit = {
+      var tag: NBTTagCompound = _
+      if (stack == null)
+        return
+      //If doesn't already exist, create NBT Tag
+      if (!fluidsMap.contains(stack.getFluid)) {
+        tag = new NBTTagCompound
         fluidsTag.appendTag(tag)
       }
-    }
-
-    def remove(index: Int): Unit = {
-      fluidsList.remove(index)
-      fluidsTag.removeTag(index)
-    }
-
-    def set(index: Int, stack: FluidStack): Unit = {
-      fluidsList.set(index, stack)
-      val tag = new NBTTagCompound
+      //Else get existing NBT Tag from map
+      else {
+        val mapEntry = fluidsMap.get(stack.getFluid)
+        tag = mapEntry.get._2
+      }
       stack.writeToNBT(tag)
-      fluidsTag.func_150304_a(index, tag)
+      fluidsMap.put(stack.getFluid, (stack, tag))
     }
 
-    /** Used to get a FluidStack for index*/
-    def get(index: Int): FluidStack = {
-      fluidsList.get(index)
+    def getFluid(fluid: Fluid): Option[FluidStack] = {
+      if (fluid == null)
+        return None
+      val value = fluidsMap.get(fluid)
+      if (value.isEmpty)
+        None
+      else
+        Some(value.get._1)
     }
 
-    def length: Int = fluidsList.size()
-
-    /**
-     * Used to search for a fluid entry
-     *
-     * @param fluid Fluid to search for
-     * @return Int Index of entry
-     */
-    def search(fluid: Fluid): Int = {
-      for (stack: FluidStack <- fluidsList if stack.getFluid == fluid)
-        return fluidsList.indexOf(stack)
-      return -1
+    def removeFluid(fluid: Fluid): Boolean = {
+      val value = fluidsMap.get(fluid)
+      if (value.isEmpty)
+        return false
+      var tagIndex: Option[Int] = None
+      for (i <- 0 until fluidsTag.tagCount if fluidsTag.getCompoundTagAt(i) == value.get._2)
+        tagIndex = Some(i)
+      if (tagIndex.isDefined)
+        fluidsTag.removeTag(tagIndex.get)
+      fluidsMap.remove(fluid)
+      return true
     }
+
+    def getSize = fluidsMap.size
   }
 }
