@@ -1,4 +1,4 @@
-package extracells.api;
+package extracells.api.storage;
 
 import net.minecraft.inventory.IInventory;
 import net.minecraftforge.common.util.ForgeDirection;

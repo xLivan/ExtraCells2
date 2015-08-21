@@ -3,7 +3,7 @@ package extracells.common.grid.helper
 import appeng.api.implementations.tiles.IChestOrDrive
 import appeng.api.storage.data.{IAEStack, IAEFluidStack}
 import appeng.api.storage._
-import extracells.api.IFluidStorageCell
+import extracells.api.storage.IFluidStorageCell
 import extracells.client.render.TextureManager
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.item.ItemStack

@@ -4,7 +4,7 @@ import java.util
 import java.util.{List => JavaList, Set => JavaSet}
 import appeng.api.config.FuzzyMode
 import cpw.mods.fml.relauncher.{Side, SideOnly}
-import extracells.api.IFluidStorageCell
+import extracells.api.storage.IFluidStorageCell
 import net.minecraft.client.renderer.texture.IIconRegister
 import net.minecraft.creativetab.CreativeTabs
 import net.minecraft.entity.player.EntityPlayer

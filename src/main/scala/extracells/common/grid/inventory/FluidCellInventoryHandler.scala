@@ -7,7 +7,8 @@ import appeng.api.config.{AccessRestriction, Actionable}
 import appeng.api.networking.security.BaseActionSource
 import appeng.api.storage.data.{IAEFluidStack, IItemList}
 import appeng.api.storage.{IMEInventoryHandler, ISaveProvider, StorageChannel}
-import extracells.api.{ECApi, IFluidStorageCell, IHandlerFluidStorage}
+import extracells.api.storage.{IHandlerFluidStorage, IFluidStorageCell}
+import extracells.api.ECApi
 import extracells.common.container.implementations.ContainerFluidStorage
 import net.minecraft.inventory.IInventory
 import net.minecraft.item.ItemStack

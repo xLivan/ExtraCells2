@@ -1,4 +1,4 @@
-package extracells.api;
+package extracells.api.storage;
 
 import appeng.api.features.INetworkEncodable;
 import net.minecraft.entity.player.EntityPlayer;

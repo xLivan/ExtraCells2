@@ -1,5 +1,7 @@
 package extracells.common
 
+import cpw.mods.fml.common.Mod.EventHandler
+import cpw.mods.fml.common.event.FMLInterModComms
 import cpw.mods.fml.common.eventhandler.SubscribeEvent
 import cpw.mods.fml.common.gameevent.TickEvent
 import net.minecraftforge.event.world.BlockEvent

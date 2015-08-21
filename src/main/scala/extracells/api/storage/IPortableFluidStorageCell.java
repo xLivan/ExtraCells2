@@ -1,4 +1,4 @@
-package extracells.api;
+package extracells.api.storage;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;

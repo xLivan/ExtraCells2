@@ -1,4 +1,4 @@
-package extracells.api;
+package extracells.api.storage;
 
 import appeng.api.storage.ICellWorkbenchItem;
 import net.minecraft.item.ItemStack;

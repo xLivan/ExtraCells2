@@ -1,4 +1,4 @@
-package extracells.api;
+package extracells.api.storage;
 
 public interface IHandlerFluidStorage {
 
