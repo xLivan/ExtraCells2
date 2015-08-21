@@ -21,7 +21,7 @@ class ItemFluidCell extends ItemCellBase with IFluidStorageCell{
   lazy val icons: Array[IIcon] = new Array[IIcon](suffixes.length)
 
   setMaxStackSize(1)
-  setMaxDamage(0)
+  setMaxDurability(0)
   setHasSubtypes(true)
 
   override def onItemRightClick(itemStack: ItemStack, world: World, player: EntityPlayer) : ItemStack = ???

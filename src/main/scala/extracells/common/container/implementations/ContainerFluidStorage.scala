@@ -16,8 +16,6 @@ class ContainerFluidStorage extends ContainerECBase
   with TFluidSelector
   with TInventoryUpdateReceiver {
 
-  var hasWirelessTermHandler: Boolean = _
-
   def forceFluidUpdate(): Unit = ???
   def doWork(): Unit = ???
 
@@ -25,8 +23,8 @@ class ContainerFluidStorage extends ContainerECBase
   override def isValid(verificationToken: scala.Any): Boolean = ???
 
   def receiveSelectedFluid(fluid: Fluid): Unit = ???
-  override def setSelectedFluid(fluid: Fluid): Unit = ???
   def updateFluidList(fluidList: IItemList[IAEFluidStack]): Unit = ???
+  override def setSelectedFluid(fluid: Fluid): Unit = ???
 
   override def onListUpdate(): Unit = ???
   override def onInventoryChanged(): Unit = ???

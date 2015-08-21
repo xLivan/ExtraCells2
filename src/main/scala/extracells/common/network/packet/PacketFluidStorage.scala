@@ -10,7 +10,6 @@ import net.minecraftforge.fluids.{Fluid, FluidStack}
 class PacketFluidStorage extends AbstractPacketBase {
   private var fluidStackList: IItemList[IAEFluidStack] = _
   private var currentFluid: Fluid = _
-  private var termHandlerPresent: Boolean = _
   this.mode = 0
 
   def this(currentFluid: Fluid) {
@@ -19,27 +18,19 @@ class PacketFluidStorage extends AbstractPacketBase {
     this.currentFluid = currentFluid
   }
 
-  def this(hasTermHandler: Boolean) {
-    this()
-    this.mode = 2
-    this.termHandlerPresent = hasTermHandler
-  }
-
   def this(player: EntityPlayer, list: IItemList[IAEFluidStack]) {
     this()
-    this.mode = 3
+    this.mode = 2
     this.fluidStackList = list
   }
 
   def getFluidList: IItemList[IAEFluidStack] = fluidStackList
   def getCurrentFluid: Fluid = currentFluid
-  def hasTermHandler: Boolean = termHandlerPresent
 
   override def readData(in: ByteBuf): Unit = {
     this.mode match {
       case 1 => this.currentFluid = PacketHelper.readFluid(in)
-      case 2 => this.termHandlerPresent = in.readBoolean()
-      case 3 => this.fluidStackList = AEApi.instance.storage.createFluidList
+      case 2 => this.fluidStackList = AEApi.instance.storage.createFluidList
         while (in.readableBytes() > 0) {
           val fluid: Fluid = PacketHelper.readFluid(in)
           val fluidAmt: Long = in.readLong()
@@ -55,8 +46,7 @@ class PacketFluidStorage extends AbstractPacketBase {
   override def writeData(out: ByteBuf): Unit = {
     this.mode match {
       case 1 => PacketHelper.writeFluid(this.currentFluid, out)
-      case 2 => out.writeBoolean(this.termHandlerPresent)
-      case 3 => for (stack: IAEFluidStack <- this.fluidStackList) {
+      case 2 => for (stack: IAEFluidStack <- this.fluidStackList) {
           PacketHelper.writeFluid(stack.getFluid, out)
           out.writeLong(stack.getStackSize)
         }

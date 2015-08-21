@@ -9,6 +9,7 @@ import appeng.api.storage.data.{IAEFluidStack, IItemList}
 import appeng.api.storage.{IMEInventoryHandler, ISaveProvider, StorageChannel}
 import extracells.api.{ECApi, IFluidStorageCell, IHandlerFluidStorage}
 import extracells.common.container.implementations.ContainerFluidStorage
+import net.minecraft.inventory.IInventory
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.{NBTTagCompound, NBTTagList}
 import net.minecraftforge.common.util.Constants
@@ -26,12 +27,12 @@ import scala.collection.mutable
  * @param storageStack ItemStack of storage cell
  * @param saveProvider save provider
  */
-
+//Todo: Add support for inverter cards, fuzzy cards make no sense here
 class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISaveProvider) extends IMEInventoryHandler[IAEFluidStack] with IHandlerFluidStorage{
   final private val tagVersionKey = "ec:tagVersion"
   final private val tagVersion = 1
   final private val tagStoredFluids = "ec:storedFluids"
-
+  IInventory
   private val stackTag: NBTTagCompound = if (storageStack.hasTagCompound) storageStack.getTagCompound
     else {
       val tag: NBTTagCompound = new NBTTagCompound
@@ -40,6 +41,7 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
     }
   protected var storedFluids: FluidSet = _
   private var preformatList: JavaList[Fluid] = new JavaArrayList[Fluid]()
+  var invertPreformat = false
   val bytesPerType: Int = storageStack.getItem.asInstanceOf[IFluidStorageCell].getBytesPerType(storageStack)
   val totalTypes: Int = storageStack.getItem.asInstanceOf[IFluidStorageCell].getMaxTypes(storageStack)
   val totalBytes: Int = storageStack.getItem.asInstanceOf[IFluidStorageCell].getMaxBytes(storageStack)
@@ -135,8 +137,17 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
     out
   }
 
-  def isAllowedByFormat(input: Fluid): Boolean =
-    !isFormatted || this.preformatList.contains(input)
+  /**
+   * Checks if a fluid is allowed by performatting
+   * @param input
+   * @return
+   */
+  def isAllowedByFormat(input: Fluid): Boolean = {
+    val preformatCheck = if (this.invertPreformat) !this.preformatList.contains(input)
+      else this.preformatList.contains(input)
+    !this.isFormatted || preformatCheck
+  }
+
   override def isPrioritized(input: IAEFluidStack): Boolean = input != null &&
     this.preformatList.contains(input.getFluid)
   override def isFormatted: Boolean = {
@@ -157,25 +168,22 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
   }
   override def validForPass(i: Int): Boolean = true //TODO: Implement
 
-  //TODO: Add support for priority, access restriction, and slot blink
+  //TODO: Add support for slot blink
   override def getSlot: Int = 0
   override def getPriority: Int = 0
   override def getAccess: AccessRestriction = AccessRestriction.READ_WRITE
   override def getChannel: StorageChannel = StorageChannel.FLUIDS
 
+  /** Get free bytes in cell*/
   def freeBytes: Int = {
     var i: Int = 0
     for (stack: FluidStack <- this.storedFluids if stack != null)
-      i += stack.amount
-    this.totalBytes - i
+      i += (stack.amount + this.bytesPerType)
+    //In the event its custom NBT with more fluids then totalSize do not return negative.
+    Math.max(0, this.totalBytes - i)
   }
   override def usedBytes(): Int = this.totalBytes - this.freeBytes
-  override def usedTypes(): Int = {
-    var count: Int = 0
-    for (stack: FluidStack <- this.storedFluids if stack != null)
-      count += 1
-    count
-  }
+  override def usedTypes(): Int = this.storedFluids.getSize
 
   private def loadNBTTag(): Unit = {
     this.stackTag.getInteger(this.tagVersionKey) match {
@@ -208,13 +216,18 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
    *
    * @param fluidsTag
    */
-  private class FluidSet(val fluidsTag: NBTTagList) extends mutable.Iterable[FluidStack] {
+  private class FluidSet(val fluidsTag: NBTTagList, val maxSize: Int = 63) extends mutable.Iterable[FluidStack] {
     private[this] val fluidsMap = new mutable.HashMap[Fluid, (FluidStack, NBTTagCompound)]()
+    //63 Types max!
     for (i <- 0 until fluidsTag.tagCount()) {
-      val tag = fluidsTag.getCompoundTagAt(i)
-      val fluidStack = FluidStack.loadFluidStackFromNBT(tag)
-      if (fluidStack != null)
-        fluidsMap.put(fluidStack.getFluid, (fluidStack, tag))
+      if (i <= maxSize) {
+        val tag = fluidsTag.getCompoundTagAt(i)
+        val fluidStack = FluidStack.loadFluidStackFromNBT(tag)
+        if (fluidStack != null)
+          fluidsMap.put(fluidStack.getFluid, (fluidStack, tag))
+        else
+          fluidsTag.removeTag(i)
+      }
       else
         fluidsTag.removeTag(i)
     }

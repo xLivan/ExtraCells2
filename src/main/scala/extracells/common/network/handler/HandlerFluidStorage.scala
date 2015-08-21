@@ -19,7 +19,6 @@ class HandlerFluidStorage extends IMessageHandler[PacketFluidStorage, IMessage] 
     (ctx.side, message.getMode) match {
       case (Side.CLIENT, 0) => return
       case (Side.SERVER, 2) => return
-      case (Side.SERVER, 3) => return
     }
 
     message.getMode match {
@@ -33,11 +32,6 @@ class HandlerFluidStorage extends IMessageHandler[PacketFluidStorage, IMessage] 
           .receiveSelectedFluid(message.getCurrentFluid)
       }
       case 2 => Minecraft.getMinecraft.currentScreen match {
-        case storage: GuiFluidStorage => storage
-          .inventorySlots.asInstanceOf[ContainerFluidStorage]
-          .hasWirelessTermHandler = message.hasTermHandler
-      }
-      case 3 => Minecraft.getMinecraft.currentScreen match {
         case storage: GuiFluidStorage => storage
           .inventorySlots.asInstanceOf[ContainerFluidStorage]
           .updateFluidList(message.getFluidList)
