@@ -3,9 +3,9 @@ package extracells.common.inventory
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.inventory.IInventory
 import net.minecraft.item.ItemStack
-import net.minecraft.nbt.NBTTagList
+import net.minecraft.nbt.{NBTTagCompound, NBTTagList}
 
-class ECInventoryBase(val name: String, val size: Int, val stackLimit: Int, val updateReceiver: Option[TInevntoryUpdateReceiver] = None) extends IInventory{
+abstract class ECInventoryBase(val name: String, val size: Int, val stackLimit: Int, val updateReceiver: Option[TInevntoryUpdateReceiver] = None) extends IInventory{
   var slots: Array[Option[ItemStack]] = Array.fill(size)(None)
 
   /**
@@ -28,7 +28,7 @@ class ECInventoryBase(val name: String, val size: Int, val stackLimit: Int, val 
     slotStack.stackSize += addedItems.stackSize
     this.slots(index) = Option(slotStack)
     markDirty()
-    return addedItems
+    addedItems
   }
   override def decrStackSize(index: Int, count: Int): ItemStack = {
     val slot = this.slots(index)
@@ -39,32 +39,63 @@ class ECInventoryBase(val name: String, val size: Int, val stackLimit: Int, val 
       val outStack = stack.splitStack(count)
       this.slots(index) = Option(stack)
       markDirty()
-      return outStack
+      outStack
     }
     else { // Requested is greater then contents in slot.
       this.slots(index) = None
       markDirty()
-      return slot.get
+      slot.get
     }
   }
 
-  override def isCustomInventoryName: Boolean = ???
-  override def isItemValidForSlot(index: Int, stack: ItemStack): Boolean = ???
-  override def isUseableByPlayer(player: EntityPlayer): Boolean = ???
+  override def isCustomInventoryName: Boolean = false
+  override def isItemValidForSlot(index: Int, stack: ItemStack): Boolean
+  override def isUseableByPlayer(player: EntityPlayer): Boolean
 
-  override def openChest(): Unit = ???
-  override def closeChest(): Unit = ???
+  //Not required.
+  override def openChest(): Unit = {}
+  override def closeChest(): Unit = {}
 
-  override def getInventoryName: String = ???
-  override def getSizeInventory: Int = ???
-  override def getInventoryStackLimit: Int = ???
-  override def getStackInSlot(slotIn: Int): ItemStack = ???
-  override def getStackInSlotOnClosing(index: Int): ItemStack = ???
+  override def getInventoryName: String = this.name
+  override def getSizeInventory: Int = this.size
+  override def getInventoryStackLimit: Int = this.stackLimit
+  override def getStackInSlot(index: Int): ItemStack = if (slots(index).isDefined)
+    slots(index).get else null
+  override def getStackInSlotOnClosing(index: Int): ItemStack = if (slots(index).isDefined)
+    slots(index).get else null
 
-  override def setInventorySlotContents(index: Int, stack: ItemStack): Unit = ???
-  override def markDirty(): Unit = ???
+  override def setInventorySlotContents(index: Int, stack: ItemStack): Unit = {
+    if (stack != null && stack.stackSize > getInventoryStackLimit)
+      stack.stackSize = getInventoryStackLimit
+    this.slots(index) = Option(stack)
+    markDirty()
+  }
+  override def markDirty(): Unit = {
+    if (this.updateReceiver.isDefined)
+      this.updateReceiver.get.onInventoryChanged()
+  }
 
-  def readFromNBT(tagList: NBTTagList) = ???
-  def writeToNBT(tagList: NBTTagList) = ???
+  def readFromNBT(tagList: NBTTagList): Unit = {
+    if(tagList == null)
+      return
+    for (i <- 0 until tagList.tagCount) {
+      val tag = tagList.getCompoundTagAt(i)
+      val slot = tag.getByte("Slot") & 255
+      if (this.slots.indices.contains(slot))
+        this.slots(slot) = Option(ItemStack.loadItemStackFromNBT(tag))
+    }
+  }
+  def writeToNBT(): NBTTagList = {
+    val tagList = new NBTTagList
+    for (i <- this.slots.indices) {
+      if (this.slots(i).isDefined) {
+        val tag = new NBTTagCompound
+        tag.setByte("Slot", i.toByte)
+        this.slots(i).get.writeToNBT(tag)
+        tagList.appendTag(tag)
+      }
+    }
+    tagList
+  }
 
 }
