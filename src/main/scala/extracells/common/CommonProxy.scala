@@ -8,19 +8,31 @@ import cpw.mods.fml.common.registry.GameRegistry
 import extracells.common.registries.{ItemEnum, BlockEnum}
 
 class CommonProxy {
-  private val externalRecipeLoader : IRecipeLoader = new IRecipeLoader {
+  lazy private val externalRecipeLoader : IRecipeLoader = new IRecipeLoader {
     override def getFile(path: String): BufferedReader = {
       return new BufferedReader(new FileReader(new File(path)))
     }
   }
 
-  private val internalRecipeLoader: IRecipeLoader = new IRecipeLoader {
+  lazy private val internalRecipeLoader: IRecipeLoader = new IRecipeLoader {
     override def getFile(path: String): BufferedReader = {
       val resourceStream: InputStream = getClass().getResourceAsStream(
         "/assets/extracells/recipes/".concat(path))
       val streamReader = new InputStreamReader(resourceStream, "UTF-8")
       return new BufferedReader(streamReader)
     }
+  }
+
+  def preInit(): Unit = {
+    registerBlocks()
+    registerItems()
+  }
+
+  def init(): Unit = {
+    registerTileEntities()
+    registerMovables()
+    registerRenderers()
+    registerFluidBurnTimes()
   }
 
   def addRecipes(configFolder: File) {

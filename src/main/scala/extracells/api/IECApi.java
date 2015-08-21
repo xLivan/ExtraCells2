@@ -1,19 +1,31 @@
 package extracells.api;
 
 import extracells.api.storage.IWirelessFluidTermHandler;
+import extracells.api.storage.filter.FilterType;
 import extracells.api.storage.filter.IFluidFilter;
 import net.minecraftforge.fluids.Fluid;
 
-public interface ExtraCellsApi {
+import java.util.EnumSet;
+
+public interface IECApi {
 
     String getVersion();
 
     /**
      *  Register a fluid filter.
+     *
      * @param filter IFluidFilter implementation
      */
     void registerFluidFilter(IFluidFilter filter);
 
     void registerFuelBurnTime(Fluid fuel, int burnTime);
+
+    /**
+     * Check if fluid is allowed by registered filters
+     *
+     * @param filterTypes Type of filters to cehck
+     * @param fluid fluid to check
+     */
+    boolean isFluidAllowed(EnumSet<FilterType> filterTypes, Fluid fluid);
 
 }

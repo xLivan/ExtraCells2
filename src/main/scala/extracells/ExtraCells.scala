@@ -67,23 +67,18 @@ object ExtraCells {
 
 		config.save
 
-		proxy.registerItems
-		proxy.registerBlocks
+    proxy.preInit()
 		integration.preInit
 	}
 
 	@EventHandler
 	def init(event: FMLInitializationEvent) : Unit = {
 		AEApi.instance.registries.recipes.addNewSubItemResolver(new NameHandler)
-		AEApi.instance.registries.wireless.registerWirelessHandler(new AEWirelessTermHandler)
 		AEApi.instance.registries.cell.addCellHandler(new FluidCellHandler)
 		val handler = new ECEventHandler
 		FMLCommonHandler.instance.bus.register(handler)
 		MinecraftForge.EVENT_BUS.register(handler)
-		proxy.registerMovables
-		proxy.registerRenderers
-		proxy.registerTileEntities
-		proxy.registerFluidBurnTimes
+    proxy.init()
 		proxy.addRecipes(configFolder)
 		NetworkWrapper.registerMessages()
 		RenderingRegistry.registerBlockHandler(new RenderHandler(RenderingRegistry.getNextAvailableRenderId))

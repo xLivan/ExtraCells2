@@ -14,5 +14,5 @@ public interface IFluidFilter {
      * @param fluid Fluid to check
      * @return True if allowed, false if not.
      */
-    boolean isAllowed(EnumSet<FilterType> filterTypes, Fluid fluid);
+    boolean isAllowed(FilterType filterType, Fluid fluid);
 }

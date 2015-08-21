@@ -1,19 +1,15 @@
 package extracells.api;
 
 public class ECApi {
-
-    public static ExtraCellsApi instance() {
+    private static IECApi instance = null;
+    public static IECApi instance() {
         if (instance == null) {
             try {
-                instance = (ExtraCellsApi) Class
-                        .forName("extracells.ExtraCellsApiInstance")
-                        .getField("instance").get(null);
+                instance = (IECApi) Class.forName("extracells.ECApiInstance")
+                        .getMethod("instance").invoke(null);
             } catch (Exception e) {
             }
         }
         return instance;
     }
-
-    private static ExtraCellsApi instance = null;
-
 }
