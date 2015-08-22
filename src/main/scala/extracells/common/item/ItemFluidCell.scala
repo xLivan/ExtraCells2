@@ -5,7 +5,7 @@ import java.util.{List => JavaList}
 
 import appeng.api.AEApi
 import extracells.api.storage.IFluidStorageCell
-import extracells.common.inventory.InventoryECUpgrades
+import extracells.common.inventory.{InventoryECFluidConfig, InventoryECUpgrades}
 import net.minecraft.client.renderer.texture.IIconRegister
 import net.minecraft.creativetab.CreativeTabs
 import net.minecraft.entity.player.EntityPlayer
@@ -13,7 +13,8 @@ import net.minecraft.inventory.IInventory
 import net.minecraft.item.{EnumRarity, Item, ItemStack}
 import net.minecraft.util.{IIcon, MathHelper}
 import net.minecraft.world.World
-import net.minecraftforge.fluids.Fluid
+import net.minecraftforge.common.util.Constants
+import net.minecraftforge.fluids.{FluidRegistry, Fluid}
 
 import scala.collection.immutable
 
@@ -26,17 +27,31 @@ class ItemFluidCell extends ItemCellBase with IFluidStorageCell{
   setMaxDurability(0)
   setHasSubtypes(true)
 
-  override def onItemRightClick(itemStack: ItemStack, world: World, player: EntityPlayer) : ItemStack = ???
+  override def onItemRightClick(itemStack: ItemStack, world: World, player: EntityPlayer) : ItemStack = {
+    if (!player.isSneaking)
+      return itemStack
+
+  }
 
   override def getRarity(stack: ItemStack) : EnumRarity = EnumRarity.rare
   override def getMaxTypes(stack: ItemStack) : Int = 5
   override def getMaxBytes(stack: ItemStack) : Int = spaces(Math.max(0,stack.getMetadata))
   override def getBytesPerType(stack: ItemStack): Int = getMaxBytes(stack) / 128
-  //TODO: Implement!
-  override def getUpgradesInventory(stack: ItemStack) : IInventory = new InventoryECUpgrades("configFluidCell", 2,
+  override def getUpgradesInventory(stack: ItemStack) : IInventory = new InventoryECUpgrades("upgradesFluidCell", 2,
     stack, Some(Set(AEApi.instance.definitions.materials.cardFuzzy, AEApi.instance.definitions.materials.cardCapacity)))
-  override def getConfigInventory(stack: ItemStack): IInventory = ???
-  override def getFilter(stack: ItemStack): util.ArrayList[Fluid] = ???
+  override def getConfigInventory(stack: ItemStack): IInventory = new InventoryECFluidConfig("configFluidCell", stack)
+  override def getPreformatted(stack: ItemStack): util.ArrayList[Fluid] = {
+    val preformatList = new util.ArrayList[Fluid]
+    if (!stack.hasTagCompound)
+      return preformatList
+    val tagList = stack.getTagCompound.getTagList("ec:preformatConfig", Constants.NBT.TAG_STRING)
+    for (i <- 0 until tagList.tagCount) {
+      val fluid = FluidRegistry.getFluid(tagList.getStringTagAt(i))
+      if (fluid != null)
+        preformatList.add(fluid)
+    }
+    preformatList
+  }
 
   //Client-sided stuff
   override def addInformation(itemStack: ItemStack, player: EntityPlayer, list: JavaList[_], bool: Boolean): Unit = {

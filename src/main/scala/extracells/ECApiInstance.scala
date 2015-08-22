@@ -2,6 +2,7 @@ package extracells
 
 import extracells.api.IECApi
 import extracells.api.storage.filter.{FilterType, IFluidFilter}
+import extracells.common.util.BasicFluidFilter
 import net.minecraftforge.fluids.Fluid
 
 import scala.collection.mutable
@@ -21,7 +22,7 @@ class ECApiInstance extends IECApi {
   override def isFluidAllowed(filterType: FilterType, fluid: Fluid): Boolean = {
     for (filter <- fluidFilters if !filter.isAllowed(filterType, fluid))
       return false
-    true
+    BasicFluidFilter.instance.isAllowed(filterType, fluid)
   }
 }
 

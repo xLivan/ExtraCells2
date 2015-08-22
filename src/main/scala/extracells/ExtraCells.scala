@@ -71,7 +71,6 @@ object ExtraCells {
 	def init(event: FMLInitializationEvent) : Unit = {
 		AEApi.instance.registries.recipes.addNewSubItemResolver(new NameHandler)
 		AEApi.instance.registries.cell.addCellHandler(new FluidCellHandler)
-    ECApiInstance.instance.registerFluidFilter(new BasicFluidFilter)
 		val handler = new ECEventHandler
 		FMLCommonHandler.instance.bus.register(handler)
 		MinecraftForge.EVENT_BUS.register(handler)

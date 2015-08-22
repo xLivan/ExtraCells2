@@ -7,6 +7,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.StatCollector;
 
 public enum ItemEnum {
+	FLUIDITEM("fluid.placeholder", new ItemFluidPlaceholder()), // Internal EC Item
 	/*PARTITEM("part.base", new ItemPartECBase()),
 	FLUIDSTORAGE("storage.fluid", new ItemStorageFluid()),
 	PHYSICALSTORAGE("storage.physical", new ItemStoragePhysical()),
@@ -15,7 +16,6 @@ public enum ItemEnum {
 	FLUIDWIRELESSTERMINAL( "terminal.fluid.wireless", new ItemWirelessTerminalFluid()),
 	STORAGECOMPONET( "storage.component", new ItemStorageComponent()),
 	STORAGECASING( "storage.casing", new ItemStorageCasing()),
-	FLUIDITEM("fluid.item", new ItemFluid()), // Internal EC Item
 	FLUIDSTORAGEPORTABLE("storage.fluid.portable", new ItemStoragePortableCell()),
 	CRAFTINGPATTERN("pattern.crafting", new ItemInternalCraftingPattern());// Internal EC Item
     */;
