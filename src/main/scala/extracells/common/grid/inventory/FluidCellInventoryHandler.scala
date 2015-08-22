@@ -7,6 +7,8 @@ import appeng.api.config.{AccessRestriction, Actionable}
 import appeng.api.networking.security.BaseActionSource
 import appeng.api.storage.data.{IAEFluidStack, IItemList}
 import appeng.api.storage.{IMEInventoryHandler, ISaveProvider, StorageChannel}
+import extracells.ECApiInstance
+import extracells.api.storage.filter.FilterType
 import extracells.api.storage.{IHandlerFluidStorage, IFluidStorageCell}
 import extracells.api.ECApi
 import extracells.common.container.implementations.ContainerFluidStorage
@@ -62,7 +64,8 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
     var requiredBytes: Int = 0
 
     //Check if can inject
-    if (input == null || !isAllowedByFormat(input.getFluid))
+    if (input == null || !ECApi.instance.isFluidAllowed(FilterType.STORAGE, input.getFluid) ||
+        !isAllowedByFormat(input.getFluid))
       return input
     if (storedFluid.isEmpty) {
       //Out of types, can't accept!

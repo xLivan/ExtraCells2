@@ -7,17 +7,15 @@ import net.minecraft.item.{Item, ItemStack}
 import net.minecraft.nbt.NBTTagCompound
 
 abstract class ItemCellBase extends Item with ICellWorkbenchItem{
-  protected val iconPrefix: String
-
   override def isEditable(itemStack: ItemStack): Boolean = if (itemStack == null) false
-  else itemStack.getItem() == this
+  else itemStack.getItem == this
 
   override def getFuzzyMode(itemStack: ItemStack): FuzzyMode = {
     if (itemStack == null)
       return null
     if (!itemStack.hasTagCompound || !itemStack.getTagCompound.hasKey("fuzzyMode"))
       setFuzzyMode(itemStack, FuzzyMode.IGNORE_ALL)
-    return FuzzyMode.valueOf(itemStack.getTagCompound.getString("fuzzyMode"))
+    FuzzyMode.valueOf(itemStack.getTagCompound.getString("fuzzyMode"))
   }
 
   override def setFuzzyMode(itemStack: ItemStack, fuzzy: FuzzyMode): Unit = {

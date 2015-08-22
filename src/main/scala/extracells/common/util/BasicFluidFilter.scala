@@ -6,10 +6,10 @@ import net.minecraftforge.fluids.Fluid
 import scala.collection.mutable.ListBuffer
 
 
-class FluidFilter extends IFluidFilter{
+class BasicFluidFilter extends IFluidFilter{
   private val terminalBlacklist = new ListBuffer[Fluid]
   private val storageBlacklist = new ListBuffer[Fluid]
-  FluidFilter.instance = this
+  BasicFluidFilter.instance = this
 
   override def isAllowed(filterType: FilterType, fluid: Fluid): Boolean = filterType match {
     case FilterType.TERMINAL => !terminalBlacklist.contains(fluid)
@@ -18,8 +18,8 @@ class FluidFilter extends IFluidFilter{
   }
 }
 
-object FluidFilter {
-  private var instance: FluidFilter = _
+object BasicFluidFilter {
+  private var instance: BasicFluidFilter = _
 
   def addTerminalBlacklist(fluid:Fluid) = instance.terminalBlacklist.append(fluid)
 

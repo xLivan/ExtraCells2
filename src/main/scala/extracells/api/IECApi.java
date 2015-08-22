@@ -23,9 +23,9 @@ public interface IECApi {
     /**
      * Check if fluid is allowed by registered filters
      *
-     * @param filterTypes Type of filters to cehck
+     * @param filterType Type of filters to cehck
      * @param fluid fluid to check
      */
-    boolean isFluidAllowed(EnumSet<FilterType> filterTypes, Fluid fluid);
+    boolean isFluidAllowed(FilterType filterType, Fluid fluid);
 
 }

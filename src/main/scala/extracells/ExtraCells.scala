@@ -6,18 +6,14 @@ import appeng.api.AEApi
 import cpw.mods.fml.client.registry.RenderingRegistry
 import cpw.mods.fml.common.Mod.EventHandler
 import cpw.mods.fml.common.event.FMLInterModComms.IMCEvent
-import cpw.mods.fml.common.{FMLCommonHandler, Loader, Mod, SidedProxy}
 import cpw.mods.fml.common.event.{FMLInitializationEvent, FMLPostInitializationEvent, FMLPreInitializationEvent}
+import cpw.mods.fml.common.{FMLCommonHandler, Loader, Mod, SidedProxy}
+import extracells.common.{CommonProxy, ECEventHandler}
 import extracells.common.grid.helper.FluidCellHandler
+import extracells.common.integration.Integration
 import extracells.common.network.NetworkWrapper
 import extracells.common.registries.ItemEnum
-import extracells.common.integration.Integration
-import extracells.common.CommonProxy
-import extracells.common.util.IMCHandler
-import extracells.render.RenderHandler
-import extracells.common.ECEventHandler
-import extracells.util.NameHandler
-import extracells.wireless.AEWirelessTermHandler
+import extracells.common.util.{BasicFluidFilter, IMCHandler}
 import net.minecraft.creativetab.CreativeTabs
 import net.minecraft.item.ItemStack
 import net.minecraftforge.common.MinecraftForge
@@ -75,6 +71,7 @@ object ExtraCells {
 	def init(event: FMLInitializationEvent) : Unit = {
 		AEApi.instance.registries.recipes.addNewSubItemResolver(new NameHandler)
 		AEApi.instance.registries.cell.addCellHandler(new FluidCellHandler)
+    ECApiInstance.instance.registerFluidFilter(new BasicFluidFilter)
 		val handler = new ECEventHandler
 		FMLCommonHandler.instance.bus.register(handler)
 		MinecraftForge.EVENT_BUS.register(handler)

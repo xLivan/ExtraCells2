@@ -1,7 +1,5 @@
 package extracells
 
-import java.util.{EnumSet => JavaEnumSet}
-
 import extracells.api.IECApi
 import extracells.api.storage.filter.{FilterType, IFluidFilter}
 import net.minecraftforge.fluids.Fluid
@@ -20,8 +18,8 @@ class ECApiInstance extends IECApi {
 
   override def registerFuelBurnTime(fuel: Fluid, burnTime: Int): Unit = ???
 
-  override def isFluidAllowed(filterTypes: JavaEnumSet[FilterType], fluid: Fluid): Boolean = {
-    for (filter <- fluidFilters if !filter.isAllowed(filterTypes, fluid))
+  override def isFluidAllowed(filterType: FilterType, fluid: Fluid): Boolean = {
+    for (filter <- fluidFilters if !filter.isAllowed(filterType, fluid))
       return false
     true
   }
