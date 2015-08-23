@@ -28,9 +28,10 @@ class ItemFluidCell extends ItemCellBase with IFluidStorageCell{
   setHasSubtypes(true)
 
   override def onItemRightClick(itemStack: ItemStack, world: World, player: EntityPlayer) : ItemStack = {
+    //TODO: Add sneak use to disassemble cell
     if (!player.isSneaking)
       return itemStack
-
+    itemStack
   }
 
   override def getRarity(stack: ItemStack) : EnumRarity = EnumRarity.rare
@@ -63,9 +64,9 @@ class ItemFluidCell extends ItemCellBase with IFluidStorageCell{
       this.icons(i) = iconRegister.registerIcon("extracells:" + "storage.fluid" + suffixes(i))
   }
 
-  override def getUnlocalizedName(itemStack: ItemStack) : String = ???
-  override def getIconFromDamage(dmg: Int) : IIcon =
-    this.icons(MathHelper.clamp_int(dmg, 0, suffixes.length))
+  override def getUnlocalizedName(itemStack: ItemStack) : String = "extracells.item.storage.fluid." +
+    suffixes(itemStack.getMetadata)
+  override def getIconFromDamage(dmg: Int) : IIcon = this.icons(MathHelper.clamp_int(dmg, 0, suffixes.length))
   override def getSubItems(item: Item, tab: CreativeTabs, list: JavaList[_]): Unit = {
     //Workaround for scala hating untyped generics
     for (i : Int <- suffixes.indices)

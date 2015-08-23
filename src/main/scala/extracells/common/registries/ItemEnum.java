@@ -7,15 +7,15 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.StatCollector;
 
 public enum ItemEnum {
-	FLUIDITEM("fluid.placeholder", new ItemFluidPlaceholder()), // Internal EC Item
+	FLUIDITEM("item.fluid", new ItemFluidPlaceholder()), // Internal EC Item
+	FLUIDSTORAGE("storage.fluid", new ItemFluidCell()),
+    STORAGECASING( "storage.casing", new ItemCellCasing()),
 	/*PARTITEM("part.base", new ItemPartECBase()),
-	FLUIDSTORAGE("storage.fluid", new ItemStorageFluid()),
 	PHYSICALSTORAGE("storage.physical", new ItemStoragePhysical()),
 	GASSTORAGE("storage.gas", new ItemStorageGas()),
 	FLUIDPATTERN("pattern.fluid", new ItemFluidPattern()),
 	FLUIDWIRELESSTERMINAL( "terminal.fluid.wireless", new ItemWirelessTerminalFluid()),
 	STORAGECOMPONET( "storage.component", new ItemStorageComponent()),
-	STORAGECASING( "storage.casing", new ItemStorageCasing()),
 	FLUIDSTORAGEPORTABLE("storage.fluid.portable", new ItemStoragePortableCell()),
 	CRAFTINGPATTERN("pattern.crafting", new ItemInternalCraftingPattern());// Internal EC Item
     */;
@@ -26,7 +26,7 @@ public enum ItemEnum {
 		this.internalName = _internalName;
 		this.item = _item;
 		this.item.setUnlocalizedName("extracells." + this.internalName);
-		if (!(this.internalName.equals("fluid.item") || this.internalName.equals("pattern.crafting")))
+		if (!(this.internalName.equals("item.fluid") || this.internalName.equals("pattern.crafting")))
 			this.item.setCreativeTab(ExtraCells.ModTab());
 	}
 
