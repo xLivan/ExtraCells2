@@ -10,12 +10,12 @@ public enum ItemEnum {
 	FLUIDITEM("item.fluid", new ItemFluidPlaceholder()), // Internal EC Item
 	FLUIDSTORAGE("storage.fluid", new ItemFluidCell()),
     STORAGECASING( "storage.casing", new ItemCellCasing()),
+	STORAGECOMPONENT( "storage.component", new ItemStorageComponent()),
 	/*PARTITEM("part.base", new ItemPartECBase()),
 	PHYSICALSTORAGE("storage.physical", new ItemStoragePhysical()),
 	GASSTORAGE("storage.gas", new ItemStorageGas()),
 	FLUIDPATTERN("pattern.fluid", new ItemFluidPattern()),
 	FLUIDWIRELESSTERMINAL( "terminal.fluid.wireless", new ItemWirelessTerminalFluid()),
-	STORAGECOMPONET( "storage.component", new ItemStorageComponent()),
 	FLUIDSTORAGEPORTABLE("storage.fluid.portable", new ItemStoragePortableCell()),
 	CRAFTINGPATTERN("pattern.crafting", new ItemInternalCraftingPattern());// Internal EC Item
     */;

@@ -4,14 +4,17 @@ import java.util
 import java.util.{List => JavaList}
 
 import appeng.api.AEApi
-import extracells.api.storage.IFluidStorageCell
+import appeng.api.storage.StorageChannel
+import extracells.api.storage.{IHandlerFluidStorage, IFluidStorageCell}
 import extracells.common.inventory.{InventoryECFluidConfig, InventoryECUpgrades}
+import extracells.common.registries.ItemEnum
 import net.minecraft.client.renderer.texture.IIconRegister
 import net.minecraft.creativetab.CreativeTabs
+import net.minecraft.entity.item.EntityItem
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.inventory.IInventory
 import net.minecraft.item.{EnumRarity, Item, ItemStack}
-import net.minecraft.util.{IIcon, MathHelper}
+import net.minecraft.util.{StatCollector, IIcon, MathHelper}
 import net.minecraft.world.World
 import net.minecraftforge.common.util.Constants
 import net.minecraftforge.fluids.{FluidRegistry, Fluid}
@@ -27,11 +30,22 @@ class ItemFluidCell extends ItemCellBase with IFluidStorageCell{
   setMaxDurability(0)
   setHasSubtypes(true)
 
-  override def onItemRightClick(itemStack: ItemStack, world: World, player: EntityPlayer) : ItemStack = {
-    //TODO: Add sneak use to disassemble cell
+  override def onItemRightClick(stack: ItemStack, world: World, player: EntityPlayer) : ItemStack = {
     if (!player.isSneaking)
-      return itemStack
-    itemStack
+      return stack
+
+    val handler = AEApi.instance().registries().cell().getCellInventory(stack, null, StorageChannel.FLUIDS)
+    if (!handler.isInstanceOf[IHandlerFluidStorage])
+      return stack
+
+    val cellHandler = handler.asInstanceOf[IHandlerFluidStorage]
+    if (cellHandler.usedBytes() > 0)
+      return stack
+
+    val casing = ItemEnum.STORAGECASING.getDamagedStack(1)
+    if (!player.inventory.addItemStackToInventory(casing))
+      world.spawnEntityInWorld(new EntityItem(player.worldObj, player.posX, player.posY, player.posZ, casing))
+    ItemEnum.STORAGECOMPONENT.getDamagedStack(stack.getMetadata + 4)
   }
 
   override def getRarity(stack: ItemStack) : EnumRarity = EnumRarity.rare
@@ -55,9 +69,22 @@ class ItemFluidCell extends ItemCellBase with IFluidStorageCell{
   }
 
   //Client-sided stuff
-  override def addInformation(itemStack: ItemStack, player: EntityPlayer, list: JavaList[_], bool: Boolean): Unit = {
+  override def addInformation(stack: ItemStack, player: EntityPlayer, list: JavaList[_], bool: Boolean): Unit = {
     val strList: JavaList[String] = list.asInstanceOf[JavaList[String]]
-    //TODO: Implement
+
+    val handler = AEApi.instance().registries().cell().getCellInventory(stack, null, StorageChannel.FLUIDS)
+    if (!handler.isInstanceOf[IHandlerFluidStorage])
+      return
+
+    val cellHandler = handler.asInstanceOf[IHandlerFluidStorage]
+    val usedBytes: Long = cellHandler.usedBytes()
+
+    strList.add(String.format(StatCollector.translateToLocal("extracells.tooltip.storage.fluid.bytes"), usedBytes / 250, cellHandler.totalBytes() / 250))
+    strList.add(String.format(StatCollector.translateToLocal("extracells.tooltip.storage.fluid.types"), cellHandler.usedTypes, cellHandler.totalTypes))
+    if (usedBytes != 0)
+      strList.add(String.format(StatCollector.translateToLocal("extracells.tooltip.storage.fluid.content"), usedBytes))
+    if (cellHandler.isFormatted)
+      strList.add(StatCollector.translateToLocal("gui.appliedenergistics2.Partitioned") + " - " + StatCollector.translateToLocal("gui.appliedenergistics2.Precise"))
   }
   override def registerIcons(iconRegister: IIconRegister): Unit = {
     for (i: Int <- suffixes.indices)

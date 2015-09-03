@@ -7,11 +7,9 @@ import appeng.api.config.{AccessRestriction, Actionable}
 import appeng.api.networking.security.BaseActionSource
 import appeng.api.storage.data.{IAEFluidStack, IItemList}
 import appeng.api.storage.{IMEInventoryHandler, ISaveProvider, StorageChannel}
-import extracells.ECApiInstance
-import extracells.api.storage.filter.FilterType
-import extracells.api.storage.{IHandlerFluidStorage, IFluidStorageCell}
 import extracells.api.ECApi
-import extracells.common.container.implementations.ContainerFluidStorage
+import extracells.api.storage.filter.FilterType
+import extracells.api.storage.{IFluidStorageCell, IHandlerFluidStorage}
 import net.minecraft.inventory.IInventory
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.{NBTTagCompound, NBTTagList}
@@ -48,7 +46,6 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
   val bytesPerType: Int = storageStack.getItem.asInstanceOf[IFluidStorageCell].getBytesPerType(storageStack)
   val totalTypes: Int = storageStack.getItem.asInstanceOf[IFluidStorageCell].getMaxTypes(storageStack)
   val totalBytes: Int = storageStack.getItem.asInstanceOf[IFluidStorageCell].getMaxBytes(storageStack)
-  private var containers: JavaList[ContainerFluidStorage] = new JavaArrayList[ContainerFluidStorage]()
 
   loadNBTTag()
 
@@ -86,10 +83,10 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
           this.storedFluids.updateFluid(fluidStack)
         }
       }
-      return null
+      null
     }
     else { //If it will not fit
-      var amountInjected
+      var amountInjected = 0
       if (storedFluid.isEmpty) { //If type is not already in storage
         amountInjected = this.freeBytes - this.bytesPerType
         if (mode == Actionable.MODULATE) {
@@ -106,7 +103,7 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
         }
       }
       input.setStackSize(input.getStackSize - amountInjected)
-      return input
+      input
     }
   }
 
@@ -123,7 +120,7 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
         stack.amount -= request.getStackSize
         this.storedFluids.updateFluid(stack)
       }
-      return extractedFluid
+      extractedFluid
     }
     else {
       val stack = requestedFluid.get
@@ -131,7 +128,7 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
       if (mode == Actionable.MODULATE) {
         this.storedFluids.removeFluid(stack.getFluid)
       }
-      return extractedFluid
+      extractedFluid
     }
   }
 
@@ -143,7 +140,7 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
 
   /**
    * Checks if a fluid is allowed by performatting
-   * @param input
+   * @param input Input fluid
    * @return
    */
   def isAllowedByFormat(input: Fluid): Boolean = {
@@ -163,16 +160,15 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
   override def canAccept(input: IAEFluidStack): Boolean = {
     if (input == null)
       return false
-    if (!ECApi.instance.canStoreFluid(input.getFluid))
+    if (!ECApi.instance.isFluidAllowed(FilterType.STORAGE, input.getFluid))
       return false
     for (stack: FluidStack <- this.storedFluids)
       if (stack == null || stack.getFluid == input.getFluid)
         return this.isAllowedByFormat(input.getFluid)
     false
   }
-  override def validForPass(i: Int): Boolean = true //TODO: Implement
+  override def validForPass(i: Int): Boolean = true
 
-  //TODO: Add support for slot blink
   override def getSlot: Int = 0
   override def getPriority: Int = 0
   override def getAccess: AccessRestriction = AccessRestriction.READ_WRITE
@@ -218,7 +214,7 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
    * If fluids changed from iterator,
    * call syncNBT to sync to NBT
    *
-   * @param fluidsTag
+   * @param fluidsTag NBTTagList for the fluids
    */
   private class FluidSet(val fluidsTag: NBTTagList, val maxSize: Int = 63) extends mutable.Iterable[FluidStack] {
     private[this] val fluidsMap = new mutable.HashMap[Fluid, (FluidStack, NBTTagCompound)]()
@@ -237,7 +233,7 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
     }
 
     def updateFluid(stack: FluidStack): Unit = {
-      var tag: NBTTagCompound = _
+      var tag: NBTTagCompound = null
       if (stack == null)
         return
       //If doesn't already exist, create NBT Tag
@@ -274,7 +270,7 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
       if (tagIndex.isDefined)
         fluidsTag.removeTag(tagIndex.get)
       fluidsMap.remove(fluid)
-      return true
+      true
     }
 
     def getSize = fluidsMap.size

@@ -19,6 +19,7 @@ object FluidUtil {
     stack.getItem match {
       case item: IFluidContainerItem => val content = item.getFluid(stack)
         if (content != null || content.amount > 0)
+
           return Option(content)
         None
       case _ => Option(FluidContainerRegistry.getFluidForFilledItem(stack))
