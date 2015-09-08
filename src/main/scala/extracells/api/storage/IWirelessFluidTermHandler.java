@@ -4,14 +4,10 @@ import appeng.api.features.INetworkEncodable;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 
-public interface IWirelessFluidTermHandler extends INetworkEncodable {
+public interface IWirelessFluidTermHandler extends IPortablePoweredDevice, INetworkEncodable {
 
     boolean canHandle(ItemStack is);
 
-    boolean hasPower(EntityPlayer player, double amount, ItemStack is);
-
     boolean isItemNormalWirelessTermToo(ItemStack is);
-
-    boolean usePower(EntityPlayer player, double amount, ItemStack is);
 
 }

@@ -5,7 +5,8 @@ import net.minecraft.inventory.IInventory
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.{NBTTagCompound, NBTTagList}
 
-abstract class ECInventoryBase(val name: String, val size: Int, val stackLimit: Int, val updateReceiver: Option[TInevntoryUpdateReceiver] = None) extends IInventory{
+abstract class ECInventoryBase(val name: String, val size: Int, val stackLimit: Int, receiver: TInventoryUpdateReceiver = null) extends IInventory{
+  val updateReceiver: Option[TInventoryUpdateReceiver] = Option(receiver)
   var slots: Array[Option[ItemStack]] = Array.fill(size)(None)
 
   /**

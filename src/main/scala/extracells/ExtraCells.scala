@@ -1,11 +1,12 @@
 package extracells
 
 import java.io.File
+import java.util.function.Consumer
 
 import appeng.api.AEApi
 import cpw.mods.fml.client.registry.RenderingRegistry
 import cpw.mods.fml.common.Mod.EventHandler
-import cpw.mods.fml.common.event.FMLInterModComms.IMCEvent
+import cpw.mods.fml.common.event.FMLInterModComms.{IMCMessage, IMCEvent}
 import cpw.mods.fml.common.event.{FMLInitializationEvent, FMLPostInitializationEvent, FMLPreInitializationEvent}
 import cpw.mods.fml.common.{FMLCommonHandler, Loader, Mod, SidedProxy}
 import extracells.common.{CommonProxy, ECEventHandler}
@@ -69,7 +70,7 @@ object ExtraCells {
 
 	@EventHandler
 	def init(event: FMLInitializationEvent) : Unit = {
-		AEApi.instance.registries.recipes.addNewSubItemResolver(new NameHandler)
+		//AEApi.instance.registries.recipes.addNewSubItemResolver(new NameHandler)
 		AEApi.instance.registries.cell.addCellHandler(new FluidCellHandler)
 		val handler = new ECEventHandler
 		FMLCommonHandler.instance.bus.register(handler)
@@ -77,7 +78,7 @@ object ExtraCells {
     proxy.init()
 		proxy.addRecipes(configFolder)
 		NetworkWrapper.registerMessages()
-		RenderingRegistry.registerBlockHandler(new RenderHandler(RenderingRegistry.getNextAvailableRenderId))
+		//RenderingRegistry.registerBlockHandler(new RenderHandler(RenderingRegistry.getNextAvailableRenderId))
 		integration.init
 	}
 
@@ -89,7 +90,8 @@ object ExtraCells {
 	@EventHandler
 	def imcHandler(event: IMCEvent): Unit = {
 		val handler = new IMCHandler
-		for(message <- event.getMessages)
-			handler.handle(message)
+		event.getMessages.forEach(new Consumer[IMCMessage] {
+      override def accept(msg: IMCMessage): Unit = handler.handle(msg)
+    })
 	}
 }

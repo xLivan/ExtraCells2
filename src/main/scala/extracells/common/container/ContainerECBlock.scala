@@ -7,7 +7,7 @@ import net.minecraft.tileentity.TileEntity
 class ContainerECBlock(private val tile: TileEntity, private val invPlayer: InventoryPlayer) extends ContainerECBase{
 
   override def canInteractWith(player:EntityPlayer ) : Boolean = {
-    return tile.getWorldObj.getTileEntity(tile.xCoord, tile.yCoord, tile.zCoord).equals(tile)
+    return tile.getWorld.getTileEntity(tile.xCoord, tile.yCoord, tile.zCoord).equals(tile)
   }
 
 }
