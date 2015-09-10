@@ -3,7 +3,7 @@ package extracells.common.network
 import cpw.mods.fml.common.network.NetworkRegistry
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint
 import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper
-import net.minecraft.entity.player.EntityPlayerMP
+import net.minecraft.entity.player.{EntityPlayer, EntityPlayerMP}
 import net.minecraft.network.Packet
 import net.minecraft.world.World
 
@@ -62,6 +62,6 @@ object NetworkWrapper {
    * @param message
    * @param player
    */
-  def sendToPlayer(message: AbstractPacketBase, player: EntityPlayerMP) : Unit =
-    CHANNEL.sendTo(message, player)
+  def sendToPlayer(message: AbstractPacketBase, player: EntityPlayer) : Unit =
+    CHANNEL.sendTo(message, player.asInstanceOf[EntityPlayerMP])
 }

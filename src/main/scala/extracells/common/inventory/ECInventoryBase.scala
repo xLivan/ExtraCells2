@@ -60,10 +60,15 @@ abstract class ECInventoryBase(val name: String, val size: Int, val stackLimit: 
   override def getInventoryName: String = this.name
   override def getSizeInventory: Int = this.size
   override def getInventoryStackLimit: Int = this.stackLimit
-  override def getStackInSlot(index: Int): ItemStack = if (slots(index).isDefined)
-    slots(index).get else null
-  override def getStackInSlotOnClosing(index: Int): ItemStack = if (slots(index).isDefined)
-    slots(index).get else null
+  override def getStackInSlot(index: Int): ItemStack = slots(index).orNull
+  override def getStackInSlotOnClosing(index: Int): ItemStack = {
+    var stack: ItemStack = null
+    if (slots(index).isDefined) {
+      stack = slots(index).get
+      slots(index) = None
+    }
+    return stack
+  }
 
   override def setInventorySlotContents(index: Int, stack: ItemStack): Unit = {
     if (stack != null && stack.stackSize > getInventoryStackLimit)

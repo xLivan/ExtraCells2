@@ -11,6 +11,8 @@ import extracells.api.storage.{IWirelessFluidTermHandler, IPortableFluidStorageC
 import extracells.common.container.ContainerECBase
 import extracells.common.container.slot.{SlotPlayerInventory, SlotRespective}
 import extracells.common.inventory.{TInventoryUpdateReceiver, ECInventoryBase}
+import extracells.common.network.NetworkWrapper
+import extracells.common.network.packet.PacketFluidStorage
 import extracells.common.util.{FluidUtil, TFluidSelector}
 import net.minecraft.entity.player.{InventoryPlayer, EntityPlayer}
 import net.minecraft.inventory.SlotFurnace
@@ -69,9 +71,18 @@ class ContainerFluidStorage(val monitor: IMEMonitor[IAEFluidStack], val player: 
         i, 8 + i * 18, 180))
   }
 
+  /**
+   * Send update packets
+   */
+  def forceFluidUpdate(): Unit = {
+    if (this.monitor != null)
+      NetworkWrapper.sendToPlayer(
+        new PacketFluidStorage(this.player, this.monitor.getStorageList), this.player)
+  }
 
-  def forceFluidUpdate(): Unit = ???
-  def doWork(): Unit = ???
+  def doWork(): Unit = {
+
+  }
 
   def hasWirelessTermHandler: Boolean = this.isPortableTerminal
   override def canInteractWith(player: EntityPlayer) : Boolean = {
