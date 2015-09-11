@@ -3,7 +3,8 @@ package extracells.common.container.implementations
 import java.lang.Iterable
 
 import appeng.api.AEApi
-import appeng.api.networking.security.BaseActionSource
+import appeng.api.config.Actionable
+import appeng.api.networking.security.{PlayerSource, BaseActionSource}
 import appeng.api.networking.storage.IBaseMonitor
 import appeng.api.storage.{IMEMonitor, IMEMonitorHandlerReceiver}
 import appeng.api.storage.data.{IAEFluidStack, IItemList}
@@ -17,7 +18,7 @@ import extracells.common.util.{FluidUtil, TFluidSelector}
 import net.minecraft.entity.player.{InventoryPlayer, EntityPlayer}
 import net.minecraft.inventory.SlotFurnace
 import net.minecraft.item.ItemStack
-import net.minecraftforge.fluids.Fluid
+import net.minecraftforge.fluids.{FluidContainerRegistry, IFluidContainerItem, Fluid}
 //TODO: Finish Implementing
 class ContainerFluidStorage(val monitor: IMEMonitor[IAEFluidStack], val player: EntityPlayer) extends ContainerECBase
     with IMEMonitorHandlerReceiver[IAEFluidStack]
@@ -33,6 +34,7 @@ class ContainerFluidStorage(val monitor: IMEMonitor[IAEFluidStack], val player: 
   private var isPortableTerminal = false
   private var wirelessTermHandler: IWirelessFluidTermHandler = _
   private var portableCell: IPortableFluidStorageCell = _
+  private var selectedFluid: Fluid = _
 
   if (!this.player.worldObj.isRemote && this.monitor != null) {
     this.monitor.addListener(this, null)
@@ -80,8 +82,94 @@ class ContainerFluidStorage(val monitor: IMEMonitor[IAEFluidStack], val player: 
         new PacketFluidStorage(this.player, this.monitor.getStorageList), this.player)
   }
 
+  //TODO: Supply a proper IActionHost
   def doWork(): Unit = {
+    val actionSource = new PlayerSource(this.player, null)
+    val inStack = this.inventory.getStackInSlot(0).copy()
+    val outStack = this.inventory.getStackInSlot(1).copy()
+    if (this.monitor == null || this.selectedFluid == null)
+      return
+    if (!FluidUtil.isFluidContainer(inStack))
+      return
+    if (outStack != null && (!outStack.isStackable || outStack.stackSize >= outStack.getMaxStackSize))
+      return
 
+    inStack.stackSize = 1
+    if (!FluidUtil.isFullFluidContainer(inStack)) {
+      val amountToFill = if (FluidUtil.isEmptyFluidContainer(inStack)) FluidUtil.getContainerCapacity(inStack)
+        else FluidUtil.getContainerCapacity(inStack) - FluidUtil.getFilledFluid(inStack).get.amount
+      val request = FluidUtil.createAEFluidStack(this.selectedFluid, amountToFill)
+      val result = this.monitor.extractItems(request, Actionable.SIMULATE, actionSource)
+      //Fill container.
+      val fillResult = FluidUtil.fillFluidContainer(inStack, result.getFluidStack)
+      //Commit to network.
+      if (fillResult._1.eq(inStack) || !addToSlot(1, fillResult._1))
+        return
+      decrementSlot(0)
+      this.monitor.extractItems(request, Actionable.MODULATE, actionSource)
+      if (fillResult._2.isDefined)
+        this.monitor.injectItems(FluidUtil.createAEFluidStack(fillResult._2.get), Actionable.MODULATE, actionSource)
+    }
+    // Full fluid containers, drain to network.
+    else {
+      inStack.getItem match {
+        case item: IFluidContainerItem => val drained = item.drain(inStack, item.getCapacity(inStack), false)
+          val overspill = this.monitor.injectItems(FluidUtil.createAEFluidStack(drained),
+            Actionable.SIMULATE, actionSource)
+          val drainAmount = if (overspill == null) 0 else drained.amount - overspill.getStackSize.toInt
+          if (drainAmount == 0)
+            return
+          val removedFluid = item.drain(inStack, drainAmount, true)
+          if (!addToSlot(1, inStack))
+            return
+          decrementSlot(0)
+          this.monitor.injectItems(FluidUtil.createAEFluidStack(removedFluid), Actionable.MODULATE, actionSource)
+
+        case _ => if (!FluidContainerRegistry.isFilledContainer(inStack)) return
+          val fluidContents = FluidUtil.getFilledFluid(inStack)
+          val overspill = this.monitor.injectItems(FluidUtil.createAEFluidStack(fluidContents.get),
+            Actionable.SIMULATE, actionSource)
+          if (overspill != null && overspill.getStackSize != 0)
+            return
+          val empty = FluidContainerRegistry.drainFluidContainer(inStack)
+          if (empty == null || !addToSlot(1, empty))
+            return
+          decrementSlot(0)
+          this.monitor.injectItems(FluidUtil.createAEFluidStack(fluidContents.get),
+            Actionable.MODULATE, actionSource)
+      }
+    }
+  }
+
+  def addToSlot(index: Int, stack: ItemStack): Boolean = {
+    if (!(index < this.inventory.slots.length))
+      return false
+    if (this.inventory.getStackInSlot(index) == null) {
+      this.inventory.setInventorySlotContents(index, stack)
+      true
+    }
+    else {
+      val slotStack = this.inventory.getStackInSlot(index)
+      if (!slotStack.isItemEqual(stack) || !ItemStack.areItemStackTagsEqual(slotStack, stack))
+        return false
+      if (!slotStack.isStackable || (slotStack.stackSize + stack.stackSize) > slotStack.getMaxStackSize)
+        return false
+      slotStack.stackSize += 1
+      this.inventory.setInventorySlotContents(index, slotStack)
+      true
+    }
+  }
+
+  def decrementSlot(index: Int): Unit = {
+    if (!(index < this.inventory.slots.length))
+      return
+    val stack = this.inventory.getStackInSlot(index)
+    if (stack == null)
+      return
+    stack.stackSize -= 1
+    if (stack.stackSize <= 0)
+      this.inventory.setInventorySlotContents(index, null)
+    this.inventory.setInventorySlotContents(index, stack)
   }
 
   def hasWirelessTermHandler: Boolean = this.isPortableTerminal
