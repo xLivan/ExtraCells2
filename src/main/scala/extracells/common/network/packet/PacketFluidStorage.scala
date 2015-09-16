@@ -18,7 +18,7 @@ class PacketFluidStorage extends AbstractPacketBase {
     this.currentFluid = currentFluid
   }
 
-  def this(player: EntityPlayer, list: IItemList[IAEFluidStack]) {
+  def this(list: IItemList[IAEFluidStack]) {
     this()
     this.mode = 2
     this.fluidStackList = list

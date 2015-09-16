@@ -11,45 +11,38 @@ class DigitTextField(fontRenderer: FontRenderer, x: Int, y: Int, l: Int, h: Int)
     if (!this.isFocused)
       return false
     char match {
-      case 0x1 => {
+      case 0x1 =>
         this.setCursorPositionEnd()
         this.setSelectionPos(0)
-        return true
-      }
-      case 0x3 => {
+        true
+      case 0x3 =>
         GuiScreen.setClipboardString(this.getSelectedText)
-        return true
-      }
-      case 0x16 => {
+        true
+      case 0x16 =>
         this.writeText(GuiScreen.getClipboardString)
-        return true
-      }
-      case 0x18 => {
+        true
+      case 0x18 =>
         GuiScreen.setClipboardString(this.getSelectedText)
         this.writeText("")
-        return true
-      }
-      case _ => {
+        true
+      case _ =>
         key match {
-          case Keyboard.KEY_ESCAPE => {
+          case Keyboard.KEY_ESCAPE =>
             this.setFocused(false)
-            return true
-          }
-          case 0xE => {
+            true
+          case 0xE =>
             if (GuiScreen.isCtrlKeyDown)
               this.deleteWords(-1)
             else
               this.deleteFromCursor(-1)
-            return true
-          }
-          case 0xC7 => {
+            true
+          case 0xC7 =>
             if (GuiScreen.isShiftKeyDown)
               this.setSelectionPos(0)
             else
               this.setCursorPositionZero()
-            return true
-          }
-          case 0xCB => {
+            true
+          case 0xCB =>
             if (GuiScreen.isShiftKeyDown) {
               if (GuiScreen.isCtrlKeyDown)
                 this.setSelectionPos(this.getNthWordFromPos(-1,this.getSelectionEnd))
@@ -60,9 +53,8 @@ class DigitTextField(fontRenderer: FontRenderer, x: Int, y: Int, l: Int, h: Int)
               this.setCursorPosition(this.getNthWordFromCursor(-1))
             else
               this.moveCursorBy(-1)
-            return true
-          }
-          case 0xCD => {
+            true
+          case 0xCD =>
             if (GuiScreen.isShiftKeyDown) {
               if (GuiScreen.isCtrlKeyDown)
                 this.setSelectionPos(this.getNthWordFromPos(1,this.getSelectionEnd))
@@ -73,36 +65,31 @@ class DigitTextField(fontRenderer: FontRenderer, x: Int, y: Int, l: Int, h: Int)
               this.setCursorPosition(this.getNthWordFromCursor(1))
             else
               this.moveCursorBy(1)
-            return true
-          }
-          case 0xCF => {
+            true
+          case 0xCF =>
             if (GuiScreen.isShiftKeyDown)
               this.setSelectionPos(getText.length)
             else
               this.setCursorPositionEnd()
-            return true
-          }
-          case 0xD3 => {
+            true
+          case 0xD3 =>
             if (GuiScreen.isCtrlKeyDown)
               this.deleteWords(1)
             else
               this.deleteFromCursor(1)
-            return true
-          }
-          case _ => {
+            true
+          case _ =>
             if (isWhitelisted(char)) {
               this.writeText(char.toString)
-              return true
+              true
             }
             else if (char.equals('-') && this.getText.isEmpty) {
               writeText(char.toString)
-              return true
+              true
             }
             else
-              return false
-          }
+              false
         }
-      }
     }
   }
 }

@@ -4,23 +4,26 @@ import java.lang.Iterable
 
 import appeng.api.AEApi
 import appeng.api.config.Actionable
-import appeng.api.networking.security.{PlayerSource, BaseActionSource}
+import appeng.api.networking.security.{BaseActionSource, IActionHost, PlayerSource}
 import appeng.api.networking.storage.IBaseMonitor
-import appeng.api.storage.{IMEMonitor, IMEMonitorHandlerReceiver}
 import appeng.api.storage.data.{IAEFluidStack, IItemList}
-import extracells.api.storage.{IWirelessFluidTermHandler, IPortableFluidStorageCell}
+import appeng.api.storage.{IMEMonitor, IMEMonitorHandlerReceiver}
+import extracells.api.storage.{IPortablePoweredDevice, IPortableFluidStorageCell, IWirelessFluidTermHandler}
+import extracells.client.gui.GuiFluidStorage
 import extracells.common.container.ContainerECBase
 import extracells.common.container.slot.{SlotPlayerInventory, SlotRespective}
-import extracells.common.inventory.{TInventoryUpdateReceiver, ECInventoryBase}
+import extracells.common.inventory.{ECInventoryBase, TInventoryUpdateReceiver}
 import extracells.common.network.NetworkWrapper
 import extracells.common.network.packet.PacketFluidStorage
 import extracells.common.util.{FluidUtil, TFluidSelector}
-import net.minecraft.entity.player.{InventoryPlayer, EntityPlayer}
-import net.minecraft.inventory.SlotFurnace
+import net.minecraft.entity.player.{EntityPlayer, InventoryPlayer}
+import net.minecraft.inventory.{Slot, SlotFurnace}
 import net.minecraft.item.ItemStack
-import net.minecraftforge.fluids.{FluidContainerRegistry, IFluidContainerItem, Fluid}
-//TODO: Finish Implementing
-class ContainerFluidStorage(val monitor: IMEMonitor[IAEFluidStack], val player: EntityPlayer) extends ContainerECBase
+import net.minecraftforge.fluids.{Fluid, FluidContainerRegistry, IFluidContainerItem}
+
+class ContainerFluidStorage(val monitor: IMEMonitor[IAEFluidStack],
+                            val player: EntityPlayer,
+                            val actionHost: IActionHost = null) extends ContainerECBase[GuiFluidStorage]
     with IMEMonitorHandlerReceiver[IAEFluidStack]
     with TInventoryUpdateReceiver
     with TFluidSelector {
@@ -32,9 +35,10 @@ class ContainerFluidStorage(val monitor: IMEMonitor[IAEFluidStack], val player: 
   }
   private var fluidStackList: IItemList[IAEFluidStack] = _
   private var isPortableTerminal = false
-  private var wirelessTermHandler: IWirelessFluidTermHandler = _
-  private var portableCell: IPortableFluidStorageCell = _
-  private var selectedFluid: Fluid = _
+  private var wirelessTermHandler: Option[IWirelessFluidTermHandler] = None
+  private var portableCell: Option[IPortableFluidStorageCell] = None
+  private var selectedFluid: Option[Fluid] = None
+  private var selectedFluidStack: Option[IAEFluidStack] = None
 
   if (!this.player.worldObj.isRemote && this.monitor != null) {
     this.monitor.addListener(this, null)
@@ -47,22 +51,48 @@ class ContainerFluidStorage(val monitor: IMEMonitor[IAEFluidStack], val player: 
   addSlotToContainer(new SlotFurnace(this.player, this.inventory, 1, 26, 92))
   bindPlayerInventory(this.player.inventory)
 
+  /**
+   * Constructor
+   * @param monitor AE Monitor for Storage Access
+   * @param player Player accessing
+   */
+  def this(monitor: IMEMonitor[IAEFluidStack], player: EntityPlayer) {
+    this(monitor, player)
+  }
+
+  /**
+   * Constructor
+   * @param player Player Accessing
+   */
   def this(player: EntityPlayer) {
     this(null, player)
   }
 
+  /**
+   * Constructor for use in portable cell
+   * @param monitor AE Monitor for Storage Access
+   * @param player Player accessing
+   * @param cell Portable Fluid Cell instance
+   */
   def this(monitor: IMEMonitor[IAEFluidStack], player: EntityPlayer, cell: IPortableFluidStorageCell) {
     this(monitor, player)
     this.isPortableTerminal = cell != null
-    this.portableCell = cell
+    this.portableCell = Option(cell)
   }
 
+  /**
+   * Constructor for use in wireless terminal
+   * @param monitor AE Monitor for Storage Access
+   * @param player Player accessing
+   * @param handler Wireless Terminal handler
+   */
   def this(monitor: IMEMonitor[IAEFluidStack], player: EntityPlayer, handler: IWirelessFluidTermHandler) {
     this(monitor, player)
     this.isPortableTerminal = handler != null
-    this.wirelessTermHandler = handler
+    this.wirelessTermHandler = Option(handler)
   }
 
+  /** Bind the player inventory to container slots */
   protected def bindPlayerInventory(inv: InventoryPlayer): Unit = {
     for (i <- 0 until 3; j <- 0 until 9)
       addSlotToContainer(new SlotPlayerInventory(inv, this,
@@ -79,12 +109,33 @@ class ContainerFluidStorage(val monitor: IMEMonitor[IAEFluidStack], val player: 
   def forceFluidUpdate(): Unit = {
     if (this.monitor != null)
       NetworkWrapper.sendToPlayer(
-        new PacketFluidStorage(this.player, this.monitor.getStorageList), this.player)
+        new PacketFluidStorage(this.monitor.getStorageList), this.player)
   }
 
-  //TODO: Supply a proper IActionHost
+  /** Energy ticking */
+  def energyTick(): Unit = {
+    var device: Option[IPortablePoweredDevice] = None
+    var drainAmount: Double = 0
+    if (this.wirelessTermHandler.isDefined) {
+      device = this.wirelessTermHandler
+      drainAmount = 1.0D
+    }
+    else if (this.portableCell.isDefined) {
+      device = this.portableCell
+      drainAmount = 0.5D
+    }
+
+    if(device.isDefined && device.get.hasPower(this.player, drainAmount,
+        this.player.getCurrentEquippedItem)) {
+      device.get.usePower(this.player, drainAmount,
+        this.player.getCurrentEquippedItem)
+    }
+
+  }
+
+  /** Fill and drain containers. */
   def doWork(): Unit = {
-    val actionSource = new PlayerSource(this.player, null)
+    val actionSource = new PlayerSource(this.player, actionHost)
     val inStack = this.inventory.getStackInSlot(0).copy()
     val outStack = this.inventory.getStackInSlot(1).copy()
     if (this.monitor == null || this.selectedFluid == null)
@@ -98,7 +149,7 @@ class ContainerFluidStorage(val monitor: IMEMonitor[IAEFluidStack], val player: 
     if (!FluidUtil.isFullFluidContainer(inStack)) {
       val amountToFill = if (FluidUtil.isEmptyFluidContainer(inStack)) FluidUtil.getContainerCapacity(inStack)
         else FluidUtil.getContainerCapacity(inStack) - FluidUtil.getFilledFluid(inStack).get.amount
-      val request = FluidUtil.createAEFluidStack(this.selectedFluid, amountToFill)
+      val request = FluidUtil.createAEFluidStack(this.selectedFluid.orNull, amountToFill)
       val result = this.monitor.extractItems(request, Actionable.SIMULATE, actionSource)
       //Fill container.
       val fillResult = FluidUtil.fillFluidContainer(inStack, result.getFluidStack)
@@ -141,6 +192,36 @@ class ContainerFluidStorage(val monitor: IMEMonitor[IAEFluidStack], val player: 
     }
   }
 
+  override def transferStackInSlot(player: EntityPlayer, slotNum: Int): ItemStack = {
+    var remainder: ItemStack = null
+    val slot: Slot = this.getSlot(slotNum)
+    if (slot != null && slot.getHasStack) {
+      val slotStack = slot.getStack
+      remainder = slotStack.copy()
+      if (this.inventory.isItemValidForSlot(0, remainder)) {
+        if (List(0,1).contains(slotNum))
+          if (!mergeItemStack(remainder, 2, 36, false))
+            return null
+        else if (!mergeItemStack(remainder, 0, 0, false))
+            return null
+
+        if (remainder.stackSize == 0)
+          slot.putStack(null)
+        else
+          slot.onSlotChanged()
+      }
+      else
+        return null
+    }
+    remainder
+  }
+
+  /**
+   * Add itemStack to slot
+   * @param index slot to add to
+   * @param stack stack to add
+   * @return
+   */
   def addToSlot(index: Int, stack: ItemStack): Boolean = {
     if (!(index < this.inventory.slots.length))
       return false
@@ -160,6 +241,10 @@ class ContainerFluidStorage(val monitor: IMEMonitor[IAEFluidStack], val player: 
     }
   }
 
+  /**
+   * Decrement the itemstack in a slot by 1
+   * @param index slot to decrement
+   */
   def decrementSlot(index: Int): Unit = {
     if (!(index < this.inventory.slots.length))
       return
@@ -172,36 +257,70 @@ class ContainerFluidStorage(val monitor: IMEMonitor[IAEFluidStack], val player: 
     this.inventory.setInventorySlotContents(index, stack)
   }
 
+  override def isValid(verificationToken: scala.Any): Boolean = true
   def hasWirelessTermHandler: Boolean = this.isPortableTerminal
   override def canInteractWith(player: EntityPlayer) : Boolean = {
     //Checks if the portable item still has enough power to stay active.
     if (hasWirelessTermHandler) {
       val stack = player.getCurrentEquippedItem
-      if (portableCell != null) {
+      if (portableCell.isDefined) {
         if (stack.getItem.isInstanceOf[IPortableFluidStorageCell])
-          return portableCell.hasPower(player, portableCell.getIdlePowerDrain(stack), stack)
+          return portableCell.get.hasPower(player, portableCell.get.getIdlePowerDrain(stack), stack)
         else
           return false
       }
       else if (wirelessTermHandler != null) {
         if (stack.getItem.isInstanceOf[IWirelessFluidTermHandler])
-          return wirelessTermHandler.hasPower(player, wirelessTermHandler.getIdlePowerDrain(stack), stack)
+          return wirelessTermHandler.get.hasPower(player, wirelessTermHandler.get.getIdlePowerDrain(stack), stack)
         else
           return false
       }
     }
     true
   }
-  override def isValid(verificationToken: scala.Any): Boolean = ???
 
-  def receiveSelectedFluid(fluid: Fluid): Unit = ???
-  def updateFluidList(fluidList: IItemList[IAEFluidStack]): Unit = ???
-  override def setSelectedFluid(fluid: Fluid): Unit = ???
+  /** Update the selected fluid */
+  def receiveSelectedFluid(fluid: Fluid): Unit = {
+    this.selectedFluid = Option(fluid)
+    if (this.selectedFluid.isDefined) {
+      val it = this.fluidStackList.iterator()
+      var iterating = true
+      while (it.hasNext && iterating) {
+        val stack = it.next()
+        if (!stack.eq(null) && stack.getFluid.eq(this.selectedFluid.orNull)) {
+          this.selectedFluidStack = Option(stack)
+          iterating = false
+        }
+      }
+    }
+    else
+      this.selectedFluidStack = None
 
-  override def onListUpdate(): Unit = ???
-  override def onInventoryChanged(): Unit = ???
-  override def postChange(monitor: IBaseMonitor[IAEFluidStack], change: Iterable[IAEFluidStack], actionSource: BaseActionSource): Unit = ???
+    if (this.gui.isDefined)
+      this.gui.get.updateFluids()
+  }
 
+  /** Update the fluid list */
+  def updateFluidList(fluidList: IItemList[IAEFluidStack]): Unit = {
+    this.fluidStackList = fluidStackList
+    if (this.gui.isDefined)
+      this.gui
+  }
+
+  override def setSelectedFluid(fluid: Fluid): Unit = {
+    NetworkWrapper.sendToServer(new PacketFluidStorage(fluid))
+    receiveSelectedFluid(fluid)
+  }
+
+  override def onListUpdate(): Unit = {}
+  override def onInventoryChanged(): Unit = {}
+
+  override def postChange(monitor: IBaseMonitor[IAEFluidStack],
+                          change: Iterable[IAEFluidStack],
+                          actionSource: BaseActionSource): Unit = {
+    this.fluidStackList = monitor.asInstanceOf[IMEMonitor[IAEFluidStack]].getStorageList
+    NetworkWrapper.sendToPlayer(new PacketFluidStorage(this.fluidStackList), this.player)
+  }
 
 
 }

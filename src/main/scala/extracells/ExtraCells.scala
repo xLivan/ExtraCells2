@@ -49,16 +49,16 @@ object ExtraCells {
 		//NetworkRegistry.INSTANCE.registerGuiHandler(this, GuiHandler)
 
 
-
+		//TODO: Move strings to localizations.
 		// Config
 		val config = new Configuration(new File(
 			configFolder.getPath + File.separator + "AppliedEnergistics2"
 				+ File.separator + "extracells.cfg"))
 		config.load
-		shortenedBuckets = config.get("Tooltips", "shortenedBuckets", true, "Shall the guis shorten large mB values?")
+		shortenedBuckets = config.get("Tooltips", "shortenedBuckets", true, "Should large mb values be shortened?")
 			.getBoolean(true)
 		dynamicTypes = config.get("Storage Cells", "dynamicTypes", true,
-			"Should the mount of bytes needed for a new type depend on the cellsize?").getBoolean(true)
+			"Should the amount of bytes needed for a new type depend on the cell size?").getBoolean(true)
 		integration.loadConfig(config)
 
 
@@ -79,12 +79,12 @@ object ExtraCells {
 		proxy.addRecipes(configFolder)
 		NetworkWrapper.registerMessages()
 		//RenderingRegistry.registerBlockHandler(new RenderHandler(RenderingRegistry.getNextAvailableRenderId))
-		integration.init
+		integration.init()
 	}
 
 	@EventHandler
 	def postInit(event: FMLPostInitializationEvent) : Unit = {
-		integration.postInit
+		integration.postInit()
 	}
 
 	@EventHandler
