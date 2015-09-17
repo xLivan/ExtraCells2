@@ -25,9 +25,8 @@ class InventoryECUpgrades(name: String, size: Int, val itemStack: ItemStack, val
    */
   def checkUpgrade(itemDef: IItemDefinition): Int = {
     var amount = 0
-    for (stack <- slots if stack.isDefined if itemDef.isSameAs(stack.get)) {
-      amount += stack.get.stackSize
-    }
+    for (stack <- slots)
+      stack.filter(s1 => itemDef.isSameAs(s1)).foreach(s2 => amount += s2.stackSize)
     amount
   }
 }

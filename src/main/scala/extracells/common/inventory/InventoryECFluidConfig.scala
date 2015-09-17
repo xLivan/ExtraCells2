@@ -49,11 +49,7 @@ class InventoryECFluidConfig(name: String, val cellItem: ItemStack, size: Int = 
       if (!isItemValidForSlot(slot, stack))
         None
       else {
-        val fluidStack = FluidUtil.getFilledFluid(stack)
-        if (fluidStack.isDefined)
-          Option(fluidStack.get.getFluid)
-        else
-          None
+        FluidUtil.getFilledFluid(stack).map(_.getFluid)
       }
     }
     /** And set the slot contents using placeholder item. */
@@ -73,17 +69,15 @@ class InventoryECFluidConfig(name: String, val cellItem: ItemStack, size: Int = 
   override def readFromNBT(tagList: NBTTagList): Unit = {
     for (i <- 0 until tagList.tagCount) {
       val fluid = Option(FluidRegistry.getFluid(tagList.getStringTagAt(i)))
-      if (fluid.isDefined)
-        this.slots(i) = Option(new ItemStack(ItemEnum.FLUIDITEM.getItem, 1, fluid.get.getID))
+      fluid.foreach(f => this.slots(i) = Option(new ItemStack(ItemEnum.FLUIDITEM.getItem, 1, f.getID)))
     }
   }
 
   override def writeToNBT(): NBTTagList = {
     val tagList = new NBTTagList
-    for (s <- this.slots if s.isDefined) {
-      val fluid = Option(FluidRegistry.getFluid(s.get.getMetadata))
-      if (fluid.isDefined)
-        tagList.appendTag(new NBTTagString(fluid.get.getName))
+    for (slot <- this.slots) {
+      slot.foreach(s => Option(FluidRegistry.getFluid(s.getMetadata))
+        .foreach(f => tagList.appendTag(new NBTTagString(f.getName))))
     }
     tagList
   }

@@ -63,11 +63,9 @@ abstract class ECInventoryBase(val name: String, val size: Int, val stackLimit: 
   override def getStackInSlot(index: Int): ItemStack = slots(index).orNull
   override def getStackInSlotOnClosing(index: Int): ItemStack = {
     var stack: ItemStack = null
-    if (slots(index).isDefined) {
-      stack = slots(index).get
-      slots(index) = None
-    }
-    return stack
+    slots(index).foreach(s => {stack = s
+      slots(index) = None})
+    stack
   }
 
   override def setInventorySlotContents(index: Int, stack: ItemStack): Unit = {
@@ -77,8 +75,7 @@ abstract class ECInventoryBase(val name: String, val size: Int, val stackLimit: 
     markDirty()
   }
   override def markDirty(): Unit = {
-    if (this.updateReceiver.isDefined)
-      this.updateReceiver.get.onInventoryChanged()
+    this.updateReceiver.foreach(_.onInventoryChanged())
   }
 
   def readFromNBT(tagList: NBTTagList): Unit = {
@@ -94,12 +91,12 @@ abstract class ECInventoryBase(val name: String, val size: Int, val stackLimit: 
   def writeToNBT(): NBTTagList = {
     val tagList = new NBTTagList
     for (i <- this.slots.indices) {
-      if (this.slots(i).isDefined) {
+      this.slots(i).foreach (stack => {
         val tag = new NBTTagCompound
         tag.setByte("Slot", i.toByte)
-        this.slots(i).get.writeToNBT(tag)
+        stack.writeToNBT(tag)
         tagList.appendTag(tag)
-      }
+      })
     }
     tagList
   }

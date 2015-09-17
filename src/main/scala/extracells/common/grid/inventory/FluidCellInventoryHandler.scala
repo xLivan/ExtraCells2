@@ -267,8 +267,7 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
       var tagIndex: Option[Int] = None
       for (i <- 0 until fluidsTag.tagCount if fluidsTag.getCompoundTagAt(i) == value.get._2)
         tagIndex = Some(i)
-      if (tagIndex.isDefined)
-        fluidsTag.removeTag(tagIndex.get)
+      tagIndex.foreach(i => fluidsTag.removeTag(i))
       fluidsMap.remove(fluid)
       true
     }
