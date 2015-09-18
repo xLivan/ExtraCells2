@@ -1,54 +1,30 @@
 package extracells.common.registries;
 
-import appeng.api.storage.IMEMonitor;
-import appeng.api.storage.data.IAEFluidStack;
-import extracells.api.storage.IPortableFluidStorageCell;
-import extracells.api.storage.IWirelessFluidTermHandler;
-import extracells.client.gui.GuiFluidStorage;
-import extracells.common.container.implementations.ContainerFluidStorage;
-import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.Container;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StatCollector;
 
-@SuppressWarnings("unchecked")
 public enum GuiEnum {
 
-    FluidTerm(null, "extracells.part.fluid.terminal.name") {
-        public GuiContainer getGui(EntityPlayer player, String name, Object[] args) {
-            return new GuiFluidStorage(player, name);
-        }
-        public Container getContainer(EntityPlayer player, Object[] args) {
-            IMEMonitor<IAEFluidStack> monitor;
-            monitor = (IMEMonitor<IAEFluidStack>) args[0];
-            return new ContainerFluidStorage(monitor, player);
-        }
-    },
-    PortableCell(FluidTerm, "extracells.item.storage.fluid.portable.name"){
-        public Container getContainer(EntityPlayer player, Object[] args) {
-            IMEMonitor<IAEFluidStack> monitor =
-                    (IMEMonitor<IAEFluidStack>) args[0];
-            IPortableFluidStorageCell cell =
-                    (IPortableFluidStorageCell) args[1];
-            return new ContainerFluidStorage(monitor, player, cell);
-        }
-    },
-    WirelessTerm(FluidTerm, FluidTerm.unlocalizedName) {
-        public Container getContainer(EntityPlayer player, Object[] args) {
-            IMEMonitor<IAEFluidStack> monitor =
-                    (IMEMonitor<IAEFluidStack>) args[0];
-            IWirelessFluidTermHandler term =
-                    (IWirelessFluidTermHandler) args[1];
-            return new ContainerFluidStorage(monitor, player, term);
-        }
-    };
+    FluidTerm("extracells.part.fluid.terminal.name", "textures/gui/terminalfluid.png"),
+    PortableCell("extracells.item.storage.fluid.portable.name", FluidTerm.guiTexture);
 
     private String unlocalizedName;
-    private GuiEnum parent;
+    private ResourceLocation guiTexture;
 
-    GuiEnum(GuiEnum parent, String unlocalizedName) {
+    GuiEnum(String unlocalizedName, String guiTexturePath) {
+        this(unlocalizedName, new ResourceLocation("extracells",guiTexturePath));
+    }
+
+    GuiEnum(String unlocalizedName, ResourceLocation guiTexture) {
         this.unlocalizedName = unlocalizedName;
-        this.parent = parent;
+        this.guiTexture = guiTexture;
+    }
+
+    static public GuiEnum getByID(int id) {
+        return GuiEnum.values()[id - 6];
+    }
+    static public boolean isValidID(int id) {
+        return id >= 6 && id < (GuiEnum.values().length + 6);
     }
 
     public String getUnlocalizedName() {
@@ -56,29 +32,10 @@ public enum GuiEnum {
     }
 
     public int getID() {
-        return this.ordinal();
+        return this.ordinal() + 6;
     }
 
-    public String getLocalizedName() {
-        return StatCollector.translateToLocal(this.unlocalizedName);
-    }
-
-    public GuiContainer getGui(EntityPlayer player, Object[] args) {
-        if (parent != null)
-            return parent.getGui(player, this.unlocalizedName, args);
-        else
-            return this.getGui(player, this.unlocalizedName, args);
-    };
-
-    public GuiContainer getGui(EntityPlayer player, String name, Object[] args) {
-        if (parent != null)
-            return parent.getGui(player, name,args);
-        return null;
-    }
-
-    public Container getContainer(EntityPlayer player, Object[] args) {
-        if (parent != null)
-            return parent.getContainer(player, args);
-        return null;
+    public ResourceLocation getTexture() {
+        return guiTexture;
     }
 }

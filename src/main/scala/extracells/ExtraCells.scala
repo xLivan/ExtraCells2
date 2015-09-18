@@ -8,11 +8,12 @@ import cpw.mods.fml.client.registry.RenderingRegistry
 import cpw.mods.fml.common.Mod.EventHandler
 import cpw.mods.fml.common.event.FMLInterModComms.{IMCMessage, IMCEvent}
 import cpw.mods.fml.common.event.{FMLInitializationEvent, FMLPostInitializationEvent, FMLPreInitializationEvent}
+import cpw.mods.fml.common.network.NetworkRegistry
 import cpw.mods.fml.common.{FMLCommonHandler, Loader, Mod, SidedProxy}
 import extracells.common.{CommonProxy, ECEventHandler}
 import extracells.common.grid.helper.FluidCellHandler
 import extracells.common.integration.Integration
-import extracells.common.network.NetworkWrapper
+import extracells.common.network.{GuiHandler, NetworkWrapper}
 import extracells.common.registries.ItemEnum
 import extracells.common.util.{BasicFluidFilter, IMCHandler}
 import net.minecraft.creativetab.CreativeTabs
@@ -20,7 +21,7 @@ import net.minecraft.item.ItemStack
 import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.common.config.Configuration
 
-@Mod(modid = "extracells", name = "Extra Cells", modLanguage = "scala", dependencies = "after:LogisticsPipes|Main;after:Waila;required-after:appliedenergistics2")
+@Mod(modid = "extracells", name = "ExtraCells 2", modLanguage = "scala", dependencies = "after:LogisticsPipes|Main;after:Waila;required-after:appliedenergistics2")
 object ExtraCells {
 
 
@@ -46,7 +47,7 @@ object ExtraCells {
 		VERSION = Loader.instance.activeModContainer.getVersion
 		configFolder = event.getModConfigurationDirectory
 
-		//NetworkRegistry.INSTANCE.registerGuiHandler(this, GuiHandler)
+		NetworkRegistry.INSTANCE.registerGuiHandler(this, new GuiHandler)
 
 
 		//TODO: Move strings to localizations.

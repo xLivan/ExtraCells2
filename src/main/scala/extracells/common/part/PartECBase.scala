@@ -116,10 +116,6 @@ abstract class PartECBase extends IPart with TGridProxyable with IActionHost wit
 
   final def getExternalFacingNode : IGridNode = null
 
-  def getServerGuiElement(entityPlayer: EntityPlayer) : Object = null
-
-  def getClientGuiElement(entityPlayer: EntityPlayer) : Object = null
-
   override def cableConnectionRenderTo() : Int
 
   @MENetworkEventSubscribe

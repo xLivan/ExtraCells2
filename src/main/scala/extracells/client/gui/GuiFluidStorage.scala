@@ -5,6 +5,7 @@ import extracells.client.gui.widget.TFluidSelectorGui
 import extracells.common.container.implementations.ContainerFluidStorage
 import extracells.common.network.NetworkWrapper
 import extracells.common.network.packet.PacketFluidStorage
+import extracells.common.registries.GuiEnum
 import extracells.common.util.TFluidSelector
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiTextField
@@ -22,8 +23,6 @@ class GuiFluidStorage(player: EntityPlayer, val guiName: String)
   val container: ContainerFluidStorage = this.inventorySlots
     .asInstanceOf[ContainerFluidStorage]
   //val fluidWidgets: IndexedSeq[]
-  private val guiTexture: ResourceLocation =
-    new ResourceLocation("extracells", "textures/gui/terminalfluid.png")
 
   var searchBox: GuiTextField = _
 
@@ -55,7 +54,7 @@ class GuiFluidStorage(player: EntityPlayer, val guiName: String)
   override def drawGuiContainerBackgroundLayer(partialTicks: Float,
                                                mouseX: Int, mouseY: Int): Unit = {
     GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F)
-    Minecraft.getMinecraft.renderEngine.bindTexture(this.guiTexture)
+    Minecraft.getMinecraft.renderEngine.bindTexture(GuiEnum.FluidTerm.getTexture)
     drawTexturedModalRect(this.guiLeft, this.guiTop, 0, 0, this.xSize, this.ySize)
     this.searchBox.drawTextBox()
     NetworkWrapper.sendToServer(new PacketFluidStorage())
