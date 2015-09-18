@@ -47,7 +47,7 @@ object ExtraCells {
 		VERSION = Loader.instance.activeModContainer.getVersion
 		configFolder = event.getModConfigurationDirectory
 
-		NetworkRegistry.INSTANCE.registerGuiHandler(this, new GuiHandler)
+		NetworkRegistry.INSTANCE.registerGuiHandler(this, GuiHandler)
 
 
 		//TODO: Move strings to localizations.

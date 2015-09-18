@@ -1,7 +1,5 @@
 package extracells.common.grid.inventory
 
-import java.util.{ArrayList => JavaArrayList, List => JavaList}
-
 import appeng.api.AEApi
 import appeng.api.config.{AccessRestriction, Actionable}
 import appeng.api.networking.security.BaseActionSource
@@ -10,13 +8,13 @@ import appeng.api.storage.{IMEInventoryHandler, ISaveProvider, StorageChannel}
 import extracells.api.ECApi
 import extracells.api.storage.filter.FilterType
 import extracells.api.storage.{IFluidStorageCell, IHandlerFluidStorage}
-import net.minecraft.inventory.IInventory
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.{NBTTagCompound, NBTTagList}
 import net.minecraftforge.common.util.Constants
 import net.minecraftforge.fluids.{Fluid, FluidStack}
 
 import scala.collection.mutable
+import scala.collection.JavaConverters._
 
 /**
  * Fluid Cell Handler
@@ -33,15 +31,14 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
   final private val tagVersionKey = "ec:tagVersion"
   final private val tagVersion = 1
   final private val tagStoredFluids = "ec:storedFluids"
-  IInventory
   private val stackTag: NBTTagCompound = if (storageStack.hasTagCompound) storageStack.getTagCompound
     else {
       val tag: NBTTagCompound = new NBTTagCompound
       storageStack.setTagCompound(tag)
       tag
     }
-  protected var storedFluids: FluidSet = _
-  private var preformatList: JavaList[Fluid] = new JavaArrayList[Fluid]()
+  protected var storedFluids: FluidSet = null
+  private var preformatList: mutable.Set[Fluid] = mutable.Set[Fluid]()
   var invertPreformat = false
   val bytesPerType: Int = storageStack.getItem.asInstanceOf[IFluidStorageCell].getBytesPerType(storageStack)
   val totalTypes: Int = storageStack.getItem.asInstanceOf[IFluidStorageCell].getMaxTypes(storageStack)
@@ -49,10 +46,10 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
 
   loadNBTTag()
 
-  def this(storageStack: ItemStack, saveProvider: ISaveProvider, preformat: JavaList[Fluid]) {
+  def this(storageStack: ItemStack, saveProvider: ISaveProvider, preformat: java.util.List[Fluid]) {
     this(storageStack, saveProvider)
     if (preformat != null)
-      this.preformatList = preformat
+      this.preformatList = mutable.Set() ++ preformat.asScala
   }
 
 
@@ -117,7 +114,7 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
     if (request.getStackSize < requestedFluid.get.amount) {
       val stack = requestedFluid.get
       if (mode == Actionable.MODULATE) {
-        stack.amount -= request.getStackSize
+        stack.amount -= request.getStackSize.toInt
         this.storedFluids.updateFluid(stack)
       }
       extractedFluid
@@ -151,12 +148,10 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
 
   override def isPrioritized(input: IAEFluidStack): Boolean = input != null &&
     this.preformatList.contains(input.getFluid)
-  override def isFormatted: Boolean = {
-    if (this.preformatList.isEmpty)
-      return false
-    for (fluid: Fluid <- this.preformatList if fluid != null)
-      return true
-  }
+
+  override def isFormatted: Boolean = this.preformatList.nonEmpty &&
+    !this.preformatList.forall(_.eq(null))
+
   override def canAccept(input: IAEFluidStack): Boolean = {
     if (input == null)
       return false
@@ -216,7 +211,7 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
    *
    * @param fluidsTag NBTTagList for the fluids
    */
-  private class FluidSet(val fluidsTag: NBTTagList, val maxSize: Int = 63) extends mutable.Iterable[FluidStack] {
+  class FluidSet(val fluidsTag: NBTTagList, val maxSize: Int = 63) extends mutable.Iterable[FluidStack] {
     private[this] val fluidsMap = new mutable.HashMap[Fluid, (FluidStack, NBTTagCompound)]()
     //63 Types max!
     for (i <- 0 until fluidsTag.tagCount()) {

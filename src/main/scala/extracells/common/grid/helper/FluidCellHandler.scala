@@ -1,14 +1,17 @@
 package extracells.common.grid.helper
 
 import appeng.api.implementations.tiles.IChestOrDrive
-import appeng.api.storage.data.{IAEStack, IAEFluidStack}
 import appeng.api.storage._
-import extracells.api.storage.{IHandlerFluidStorage, IFluidStorageCell}
+import appeng.api.storage.data.IAEStack
+import extracells.api.storage.IFluidStorageCell
 import extracells.client.render.TextureManager
 import extracells.common.grid.inventory.FluidCellInventoryHandler
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.item.ItemStack
 import net.minecraft.util.IIcon
+import net.minecraftforge.fluids.Fluid
+
+import scala.collection.JavaConverters._
 
 class FluidCellHandler extends ICellHandler {
   //TODO: Add cell idle drain values
@@ -31,7 +34,7 @@ class FluidCellHandler extends ICellHandler {
   override def getTopTexture_Light: IIcon = TextureManager.TERMINAL_FRONT.getTextures()(2)
 
   override def getCellInventory(stack: ItemStack, saveProvider: ISaveProvider, channel: StorageChannel): IMEInventoryHandler[_ <: IAEStack[_]] = {
-    if (channel != StorageChannel.FLUIDS || !stack.isInstanceOf[IFluidStorageCell])
+    if (channel != StorageChannel.FLUIDS || !stack.getItem.isInstanceOf[IFluidStorageCell])
       return null
     new FluidCellInventoryHandler(stack, saveProvider, stack.getItem.asInstanceOf[IFluidStorageCell].getPreformatted(stack))
   }

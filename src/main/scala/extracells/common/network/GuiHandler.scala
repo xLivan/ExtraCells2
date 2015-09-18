@@ -12,7 +12,7 @@ import net.minecraft.item.Item
 import net.minecraft.world.World
 import net.minecraftforge.common.util.ForgeDirection
 
-class GuiHandler extends IGuiHandler {
+object GuiHandler extends IGuiHandler {
   var tempArgs: Option[Array[AnyRef]] = None
 
   def launchGui(id: Int, player: EntityPlayer, args: Array[AnyRef]): Unit = {
@@ -26,9 +26,9 @@ class GuiHandler extends IGuiHandler {
 
   override def getClientGuiElement(sideID: Int, player: EntityPlayer, world: World,
                                    x: Int, y: Int, z: Int): AnyRef = {
-    var gui: Option[AnyRef] = None
     if (player.eq(null))
       return null
+    var gui: Option[AnyRef] = None
     /** Handle GUI items. */
     if (world.eq(null))
       gui = Option(player.getCurrentEquippedItem)
@@ -36,7 +36,7 @@ class GuiHandler extends IGuiHandler {
         .map(stack => stack.getItem.asInstanceOf[TGuiItem].getClientGuiElement(player, stack))
 
     val block = Option(world.getBlock(x, y, z))
-    val side = ForgeDirection.getOrientation(side)
+    val side = ForgeDirection.getOrientation(sideID)
     if (gui.isEmpty)
       gui = block.flatMap[AnyRef] {
         case block: TGuiBlock => Option(block.getClientGuiElement(player, world, x, y, z))
@@ -54,7 +54,6 @@ class GuiHandler extends IGuiHandler {
                                    x: Int, y: Int, z: Int): AnyRef = {
     if (player.eq(null))
       return null
-
     var container: Option[AnyRef] = None
     /** Handle GUI items */
     if (world.eq(null))
@@ -63,7 +62,7 @@ class GuiHandler extends IGuiHandler {
         .map(stack => stack.getItem.asInstanceOf[TGuiItem].getServerGuiElement(player, stack))
 
     val block = Option(world.getBlock(x, y, z))
-    val side = ForgeDirection.getOrientation(side)
+    val side = ForgeDirection.getOrientation(sideID)
     if (container.isEmpty)
       container = block.flatMap[AnyRef] {
         case block: TGuiBlock => Option(block.getServerGuiElement(player, world, x, y, z))

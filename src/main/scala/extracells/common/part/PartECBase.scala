@@ -98,10 +98,10 @@ abstract class PartECBase extends IPart with TGridProxyable with IActionHost wit
 
   def getItemStack(partType: PartItemStack): ItemStack = {
     //TODO: Implement function
-    return null
+    null
   }
 
-  final def getLocation : DimensionalCoord = new DimensionalCoord(this.tile.getWorldObj,
+  final def getLocation : DimensionalCoord = new DimensionalCoord(this.tile.getWorld,
     this.tile.xCoord, this.tile.yCoord, this.tile.zCoord)
 
   def getNode : IGridNode = this.node
@@ -145,7 +145,7 @@ abstract class PartECBase extends IPart with TGridProxyable with IActionHost wit
   override def readFromStream(data: ByteBuf) : Boolean = {
     this.isActive = data.readBoolean()
     this.isPowered = data.readBoolean()
-    return true;
+    true
   }
 
   @throws(classOf[IOException])
@@ -169,7 +169,7 @@ abstract class PartECBase extends IPart with TGridProxyable with IActionHost wit
     val ts: Tessellator = Tessellator.instance
 
     rh.setInvColor(0xFFFFFF)
-    val otherIcon: IIcon = TextureManager.BUS_COLOR.getTextures(0)
+    val otherIcon: IIcon = TextureManager.BUS_COLOR.getTextures()(0)
     val side: IIcon = TextureManager.BUS_SIDE.getTexture
     rh.setTexture(otherIcon, otherIcon, side, side, otherIcon, otherIcon)
     rh.renderInventoryBox(renderer)

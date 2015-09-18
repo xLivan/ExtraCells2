@@ -79,12 +79,16 @@ class ItemFluidCell extends ItemCellBase with IFluidStorageCell{
     val cellHandler = handler.asInstanceOf[IHandlerFluidStorage]
     val usedBytes: Long = cellHandler.usedBytes()
 
-    strList.add(String.format(StatCollector.translateToLocal("extracells.tooltip.storage.fluid.bytes"), usedBytes / 250, cellHandler.totalBytes() / 250))
-    strList.add(String.format(StatCollector.translateToLocal("extracells.tooltip.storage.fluid.types"), cellHandler.usedTypes, cellHandler.totalTypes))
+    strList.add(String.format(StatCollector.translateToLocal("extracells.tooltip.storage.fluid.bytes"),
+      (usedBytes / 250).toString, (cellHandler.totalBytes() / 250).toString))
+    strList.add(String.format(StatCollector.translateToLocal("extracells.tooltip.storage.fluid.types"),
+      cellHandler.usedTypes.toString, cellHandler.totalTypes.toString))
     if (usedBytes != 0)
-      strList.add(String.format(StatCollector.translateToLocal("extracells.tooltip.storage.fluid.content"), usedBytes))
+      strList.add(String.format(StatCollector.translateToLocal("extracells.tooltip.storage.fluid.content"),
+        usedBytes.toString))
     if (cellHandler.isFormatted)
-      strList.add(StatCollector.translateToLocal("gui.appliedenergistics2.Partitioned") + " - " + StatCollector.translateToLocal("gui.appliedenergistics2.Precise"))
+      strList.add(StatCollector.translateToLocal("gui.appliedenergistics2.Partitioned") + " - " +
+        StatCollector.translateToLocal("gui.appliedenergistics2.Precise"))
   }
   override def registerIcons(iconRegister: IIconRegister): Unit = {
     for (i: Int <- suffixes.indices)

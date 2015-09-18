@@ -1,10 +1,12 @@
 package extracells.common.registries;
 
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.StatCollector;
 
+/**
+ * Central location for storing GUI texture locations and unlocalized names.
+ * Reason: To allow for easy modification.
+ */
 public enum GuiEnum {
-
     FluidTerm("extracells.part.fluid.terminal.name", "textures/gui/terminalfluid.png"),
     PortableCell("extracells.item.storage.fluid.portable.name", FluidTerm.guiTexture);
 

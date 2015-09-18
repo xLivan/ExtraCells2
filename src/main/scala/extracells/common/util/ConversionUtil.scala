@@ -6,11 +6,11 @@ import scala.collection.immutable
 import scala.collection.mutable
 
 object ConversionUtil {
-  def AEListToScalaList[T <: IAEStack](AEList: IItemList[T]): immutable.List[T] = {
+  def AEListToScalaList[T <: IAEStack[T]](AEList: IItemList[T]): immutable.List[T] = {
     val list = mutable.ListBuffer[T]()
-    for (stack: T <- AEList.iterator())
-      if (stack.ne(null))
-        list.append(stack)
-    list.toList
+    val it = AEList.iterator()
+    while (it.hasNext)
+      list.append(it.next())
+    list.filter(_.ne(null)).toList
   }
 }

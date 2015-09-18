@@ -24,7 +24,7 @@ import scala.collection.immutable
 
 class ContainerFluidStorage(val monitor: IMEMonitor[IAEFluidStack],
                             val player: EntityPlayer,
-                            val actionHost: IActionHost = null) extends ContainerECBase[GuiFluidStorage]
+                            val actionHost: IActionHost) extends ContainerECBase[GuiFluidStorage]
     with IMEMonitorHandlerReceiver[IAEFluidStack]
     with TInventoryUpdateReceiver
     with TFluidSelector {
@@ -56,7 +56,7 @@ class ContainerFluidStorage(val monitor: IMEMonitor[IAEFluidStack],
    * @param player Player accessing
    */
   def this(monitor: IMEMonitor[IAEFluidStack], player: EntityPlayer) {
-    this(monitor, player)
+    this(monitor, player, null.asInstanceOf[IActionHost])
   }
 
   /**
@@ -280,8 +280,8 @@ class ContainerFluidStorage(val monitor: IMEMonitor[IAEFluidStack],
   }
 
   /** Update the fluid list */
-  def updateFluidList(fluidList: IItemList[IAEFluidStack]): Unit = {
-    this.fluidStackList = ConversionUtil.AEListToScalaList[IAEFluidStack](fluidList)
+  def updateFluidList(fluidList: immutable.List[IAEFluidStack]): Unit = {
+    this.fluidStackList = fluidList
     this.gui.foreach(_.updateFluids())
   }
 

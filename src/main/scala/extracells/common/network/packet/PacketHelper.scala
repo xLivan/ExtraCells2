@@ -11,10 +11,10 @@ import io.netty.buffer.ByteBuf
 import net.minecraft.client.Minecraft
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.tileentity.TileEntity
-import net.minecraft.world.{WorldServer, World}
+import net.minecraft.world.{World, WorldServer}
 import net.minecraftforge.common.DimensionManager
 import net.minecraftforge.common.util.ForgeDirection
-import net.minecraftforge.fluids.{FluidStack, FluidRegistry, Fluid}
+import net.minecraftforge.fluids.{Fluid, FluidRegistry}
 
 object PacketHelper {
 
@@ -22,28 +22,28 @@ object PacketHelper {
   def readString(in: ByteBuf): String = {
     val stringBytes: Array[Byte] = new Array[Byte](in.readInt())
     in.readBytes(stringBytes)
-    return new String(stringBytes, Charsets.UTF_8)
+    new String(stringBytes, Charsets.UTF_8)
   }
 
   def readWorld(in: ByteBuf): World = {
     val world: WorldServer = DimensionManager.getWorld(in.readInt())
     if (FMLCommonHandler.instance.getSide.equals(Side.CLIENT))
       return if (world != null) world else Minecraft.getMinecraft.theWorld
-    return world
+    world
   }
 
   def readPlayer(in: ByteBuf): EntityPlayer = {
     if(!in.readBoolean())
       return null
     //Get player by UUID TODO: Change this for 1.8
-    return readWorld(in).func_152378_a(UUID.fromString(readString(in)))
+    readWorld(in).getPlayerEntityByUUID(UUID.fromString(readString(in)))
   }
 
   def readTileEntity(in: ByteBuf): TileEntity =
     readWorld(in).getTileEntity(in.readInt(), in.readInt(), in.readInt())
 
   def readPart(in: ByteBuf): PartECBase = {
-    return readTileEntity(in).asInstanceOf[IPartHost]
+    readTileEntity(in).asInstanceOf[IPartHost]
       .getPart(ForgeDirection.getOrientation(in.readByte())).asInstanceOf[PartECBase]
   }
 
@@ -70,7 +70,7 @@ object PacketHelper {
   }
 
   def writeTileEntity(tile: TileEntity, out: ByteBuf): Unit = {
-    writeWorld(tile.getWorldObj, out)
+    writeWorld(tile.getWorld, out)
     out.writeInt(tile.xCoord)
     out.writeInt(tile.yCoord)
     out.writeInt(tile.zCoord)
@@ -83,7 +83,8 @@ object PacketHelper {
 
   def writeFluid(fluid: Fluid, out: ByteBuf): Unit = {
     if (fluid == null)
-      return writeString("", out)
-    writeString(fluid.getName, out)
+      writeString("", out)
+    else
+      writeString(fluid.getName, out)
   }
 }
