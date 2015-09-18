@@ -10,6 +10,6 @@ import net.minecraft.item.ItemStack
  * @param x Slot X
  * @param y Slot Y
  */
-class SlotRespective(val inventory: IInventory, index: Int, x: Int, y: Int) extends Slot(inventory, index, x, y) {
+class SlotRespective(inventory: IInventory, index: Int, x: Int, y: Int) extends Slot(inventory, index, x, y) {
   override def isItemValid(stack: ItemStack): Boolean = this.inventory.isItemValidForSlot(this.slotNumber, stack)
 }

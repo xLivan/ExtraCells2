@@ -9,7 +9,7 @@ import net.minecraft.client.Minecraft
 import net.minecraft.entity.player.EntityPlayer
 
 class HandlerFluidStorage extends IMessageHandler[PacketFluidStorage, IMessage] {
-  override def onMessage(message: PacketFluidStorage, ctx: MessageContext): Unit = {
+  override def onMessage(message: PacketFluidStorage, ctx: MessageContext): IMessage = {
     val player: EntityPlayer = ctx.side match  {
       case Side.SERVER => ctx.getServerHandler.playerEntity
       case Side.CLIENT => Minecraft.getMinecraft.thePlayer
@@ -17,25 +17,29 @@ class HandlerFluidStorage extends IMessageHandler[PacketFluidStorage, IMessage] 
 
     //Side checking so packet modes only go one way.
     (ctx.side, message.getMode) match {
-      case (Side.CLIENT, 0) => return
-      case (Side.SERVER, 2) => return
+      case (Side.CLIENT, 0) => null
+      case (Side.SERVER, 2) => null
+      case _ => message.getMode match {
+        case 0 => player.openContainer match {
+          case container: ContainerFluidStorage =>
+            container.forceFluidUpdate()
+            container.doWork()
+            null
+        }
+        case 1 => player.openContainer match {
+          case container: ContainerFluidStorage => container
+            .receiveSelectedFluid(message.getCurrentFluid)
+            null
+        }
+        case 2 => Minecraft.getMinecraft.currentScreen match {
+          case storage: GuiFluidStorage => storage
+            .inventorySlots.asInstanceOf[ContainerFluidStorage]
+            .updateFluidList(message.getFluidList)
+            null
+        }
+      }
     }
 
-    message.getMode match {
-      case 0 => player.openContainer match {
-        case container: ContainerFluidStorage =>
-          container.forceFluidUpdate()
-          container.doWork()
-      }
-      case 1 => player.openContainer match {
-        case container: ContainerFluidStorage => container
-          .receiveSelectedFluid(message.getCurrentFluid)
-      }
-      case 2 => Minecraft.getMinecraft.currentScreen match {
-        case storage: GuiFluidStorage => storage
-          .inventorySlots.asInstanceOf[ContainerFluidStorage]
-          .updateFluidList(message.getFluidList)
-      }
-    }
+
   }
 }

@@ -3,6 +3,9 @@ package extracells.common.network
 import cpw.mods.fml.common.network.NetworkRegistry
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint
 import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper
+import cpw.mods.fml.relauncher.Side
+import extracells.common.network.handler.HandlerFluidStorage
+import extracells.common.network.packet.PacketFluidStorage
 import net.minecraft.entity.player.{EntityPlayer, EntityPlayerMP}
 import net.minecraft.network.Packet
 import net.minecraft.world.World
@@ -10,16 +13,19 @@ import net.minecraft.world.World
 object NetworkWrapper {
   private val CHANNEL: SimpleNetworkWrapper = NetworkRegistry.INSTANCE.newSimpleChannel("extracells")
   private var currentDiscriminator: Int = 0
+  val packets = Set.apply(
+    (classOf[HandlerFluidStorage], classOf[PacketFluidStorage], Side.SERVER),
+    (classOf[HandlerFluidStorage], classOf[PacketFluidStorage], Side.CLIENT)
+  )
 
   /**
-   * Registers all packets listed in [[MessageEnum]](
+   * Registers all packets listed in [[packets]](
    */
   def registerMessages(): Unit = {
-    for ( messageType <- MessageEnum.values) {
-      CHANNEL.registerMessage(messageType.handlerClass,
-        messageType.messageClass, currentDiscriminator, messageType.side)
+    this.packets.foreach(p => {
+      CHANNEL.registerMessage(p._1, p._2, currentDiscriminator, p._3)
       currentDiscriminator += 1
-    }
+    })
   }
 
   /**
