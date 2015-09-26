@@ -97,7 +97,7 @@ abstract class PartECBase extends IPart with TGridProxyable with IActionHost wit
   def getTile: TileEntity = this.tile
 
   def getItemStack(partType: PartItemStack): ItemStack = {
-    //TODO: Implement function
+    //TODO: Implement function AFTER implmenting PARTITEM
     null
   }
 

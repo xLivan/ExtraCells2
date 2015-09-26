@@ -35,7 +35,6 @@ object PacketHelper {
   def readPlayer(in: ByteBuf): EntityPlayer = {
     if(!in.readBoolean())
       return null
-    //Get player by UUID TODO: Change this for 1.8
     readWorld(in).getPlayerEntityByUUID(UUID.fromString(readString(in)))
   }
 

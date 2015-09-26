@@ -1,6 +1,6 @@
 package extracells.common.registries;
 
-import extracells.common.block.*;
+import extracells.common.block.BlockWalrus;
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.util.StatCollector;
@@ -27,7 +27,7 @@ public enum BlockEnum {
               Class<? extends ItemBlock> _itemBlockClass) {
         this.internalName = _internalName;
         this.block = _block;
-        this.block.setBlockName("extracells.block." + this.internalName);
+        this.block.setUnlocalizedName("extracells.block." + this.internalName);
         this.itemBlockClass = _itemBlockClass;
     }
 

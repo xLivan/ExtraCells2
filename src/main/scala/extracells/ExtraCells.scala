@@ -10,12 +10,13 @@ import cpw.mods.fml.common.event.FMLInterModComms.{IMCMessage, IMCEvent}
 import cpw.mods.fml.common.event.{FMLInitializationEvent, FMLPostInitializationEvent, FMLPreInitializationEvent}
 import cpw.mods.fml.common.network.NetworkRegistry
 import cpw.mods.fml.common.{FMLCommonHandler, Loader, Mod, SidedProxy}
+import extracells.client.render.RenderHandler
 import extracells.common.{CommonProxy, ECEventHandler}
 import extracells.common.grid.helper.FluidCellHandler
 import extracells.common.integration.Integration
 import extracells.common.network.{GuiHandler, NetworkWrapper}
 import extracells.common.registries.ItemEnum
-import extracells.common.util.{BasicFluidFilter, IMCHandler}
+import extracells.common.util.IMCHandler
 import net.minecraft.creativetab.CreativeTabs
 import net.minecraft.item.ItemStack
 import net.minecraftforge.common.MinecraftForge
@@ -78,7 +79,7 @@ object ExtraCells {
     proxy.init()
 		proxy.addRecipes(configFolder)
 		NetworkWrapper.registerMessages()
-		//RenderingRegistry.registerBlockHandler(new RenderHandler(RenderingRegistry.getNextAvailableRenderId))
+		RenderingRegistry.registerBlockHandler(new RenderHandler(RenderingRegistry.getNextAvailableRenderId))
 		integration.init()
 	}
 

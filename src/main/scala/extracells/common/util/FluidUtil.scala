@@ -25,20 +25,29 @@ object FluidUtil {
     AEApi.instance.storage.createFluidStack(stack)
 
   /**
-   * Unifies fluid stacks to the [[Fluid]] registered to the name in the [[FluidRegistry]]
+   * Unifies fluid stacks to the default [[Fluid]] registered to the name in the [[FluidRegistry]]
    * @param stack [[Option]] containing the FluidStack to unify.
    * @return Option containing the unified FluidStack
    */
   def unifyStack(stack: Option[FluidStack]): Option[FluidStack] = stack.map( s =>
-    new FluidStack(FluidRegistry.getFluid(s.getFluid.getName), s.amount, s.tag)
+    if (FluidRegistry.isFluidDefault(s.getFluid))
+      s
+    else
+      new FluidStack(getDefaultFluid(s.getFluid), s.amount, s.tag)
   )
 
   /**
-   * Unifies fluid stacks to the [[Fluid]] registered to the name in the [[FluidRegistry]]
+   * Unifies fluid stacks to the default [[Fluid]] registered to the name in the [[FluidRegistry]]
    * @param stack FluidStack to unify.
    * @return Unified FluidStack
    */
   def unifyStack(stack: FluidStack): FluidStack = unifyStack(Option(stack)).orNull
+
+  /**
+   * Gets the default Fluid for the given fluid name.
+   */
+  def getDefaultFluid(fluid: Fluid): Fluid = if (FluidRegistry.isFluidDefault(fluid)) fluid
+    else FluidRegistry.getFluid(fluid.getName)
 
   /**
    * Gets the currently filled fluid for a container
@@ -73,7 +82,7 @@ object FluidUtil {
 
   /**
    * Checks if a given itemstack is a empty fluid container.
-   * @param stack
+   * @param stack [[ItemStack]] to check.
    * @return
    */
   def isEmptyFluidContainer(stack: ItemStack): Boolean = {
