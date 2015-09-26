@@ -3,7 +3,7 @@ package extracells.common.util
 import appeng.api.AEApi
 import appeng.api.storage.data.IAEFluidStack
 import net.minecraft.item.ItemStack
-import net.minecraftforge.fluids.{IFluidContainerItem, FluidContainerRegistry, Fluid, FluidStack}
+import net.minecraftforge.fluids._
 
 object FluidUtil {
 
@@ -23,6 +23,22 @@ object FluidUtil {
    */
   def createAEFluidStack(stack: FluidStack): IAEFluidStack =
     AEApi.instance.storage.createFluidStack(stack)
+
+  /**
+   * Unifies fluid stacks to the [[Fluid]] registered to the name in the [[FluidRegistry]]
+   * @param stack [[Option]] containing the FluidStack to unify.
+   * @return Option containing the unified FluidStack
+   */
+  def unifyStack(stack: Option[FluidStack]): Option[FluidStack] = stack.map( s =>
+    new FluidStack(FluidRegistry.getFluid(s.getFluid.getName), s.amount, s.tag)
+  )
+
+  /**
+   * Unifies fluid stacks to the [[Fluid]] registered to the name in the [[FluidRegistry]]
+   * @param stack FluidStack to unify.
+   * @return Unified FluidStack
+   */
+  def unifyStack(stack: FluidStack): FluidStack = unifyStack(Option(stack)).orNull
 
   /**
    * Gets the currently filled fluid for a container

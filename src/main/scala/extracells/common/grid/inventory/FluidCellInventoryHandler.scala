@@ -8,6 +8,8 @@ import appeng.api.storage.{IMEInventoryHandler, ISaveProvider, StorageChannel}
 import extracells.api.ECApi
 import extracells.api.storage.filter.FilterType
 import extracells.api.storage.{IFluidStorageCell, IHandlerFluidStorage}
+import extracells.common.util.InventoryUtil
+import net.minecraft.inventory.IInventory
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.{NBTTagCompound, NBTTagList}
 import net.minecraftforge.common.util.Constants
@@ -26,7 +28,6 @@ import scala.collection.JavaConverters._
  * @param storageStack ItemStack of storage cell
  * @param saveProvider save provider
  */
-//Todo: Add support for inverter cards, fuzzy cards make no sense here
 class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISaveProvider) extends IMEInventoryHandler[IAEFluidStack] with IHandlerFluidStorage{
   final private val tagVersionKey = "ec:tagVersion"
   final private val tagVersion = 1
@@ -39,7 +40,7 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
     }
   protected var storedFluids: FluidSet = null
   private var preformatList: mutable.Set[Fluid] = mutable.Set[Fluid]()
-  var invertPreformat = false
+  var upgrades: Option[IInventory] = None
   val bytesPerType: Int = storageStack.getItem.asInstanceOf[IFluidStorageCell].getBytesPerType(storageStack)
   val totalTypes: Int = storageStack.getItem.asInstanceOf[IFluidStorageCell].getMaxTypes(storageStack)
   val totalBytes: Int = storageStack.getItem.asInstanceOf[IFluidStorageCell].getMaxBytes(storageStack)
@@ -141,7 +142,7 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
    * @return
    */
   def isAllowedByFormat(input: Fluid): Boolean = {
-    val preformatCheck = if (this.invertPreformat) !this.preformatList.contains(input)
+    val preformatCheck = if (this.isInverted) !this.preformatList.contains(input)
       else this.preformatList.contains(input)
     !this.isFormatted || preformatCheck
   }
@@ -151,6 +152,9 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
 
   override def isFormatted: Boolean = this.preformatList.nonEmpty &&
     !this.preformatList.forall(_.eq(null))
+
+  def isInverted: Boolean = InventoryUtil.search(this.upgrades.orNull,
+    AEApi.instance().definitions().materials().cardInverter()).isDefined
 
   override def canAccept(input: IAEFluidStack): Boolean = {
     if (input == null)
@@ -181,6 +185,8 @@ class FluidCellInventoryHandler(storageStack: ItemStack, val saveProvider: ISave
   override def usedTypes(): Int = this.storedFluids.getSize
 
   private def loadNBTTag(): Unit = {
+    this.upgrades =  Option(storageStack.getItem.asInstanceOf[IFluidStorageCell]
+      .getUpgradesInventory(storageStack))
     this.stackTag.getInteger(this.tagVersionKey) match {
       //Original EC2 format, maintained for backwards compatibility.
       case 0 => this.storedFluids = new FluidSet(new NBTTagList)

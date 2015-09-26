@@ -50,12 +50,11 @@ object ExtraCells {
 		NetworkRegistry.INSTANCE.registerGuiHandler(this, GuiHandler)
 
 
-		//TODO: Move strings to localizations.
 		// Config
 		val config = new Configuration(new File(
 			configFolder.getPath + File.separator + "AppliedEnergistics2"
 				+ File.separator + "extracells.cfg"))
-		config.load
+		config.load()
 		shortenedBuckets = config.get("Tooltips", "shortenedBuckets", true, "Should large mb values be shortened?")
 			.getBoolean(true)
 		dynamicTypes = config.get("Storage Cells", "dynamicTypes", true,
@@ -63,10 +62,10 @@ object ExtraCells {
 		integration.loadConfig(config)
 
 
-		config.save
+		config.save()
 
     proxy.preInit()
-		integration.preInit
+		integration.preInit()
 	}
 
 	@EventHandler

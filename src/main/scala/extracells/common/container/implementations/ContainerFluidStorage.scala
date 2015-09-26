@@ -5,7 +5,7 @@ import java.lang.Iterable
 import appeng.api.config.Actionable
 import appeng.api.networking.security.{BaseActionSource, IActionHost, PlayerSource}
 import appeng.api.networking.storage.IBaseMonitor
-import appeng.api.storage.data.{IAEFluidStack, IItemList}
+import appeng.api.storage.data.IAEFluidStack
 import appeng.api.storage.{IMEMonitor, IMEMonitorHandlerReceiver}
 import extracells.api.storage.{IPortableFluidStorageCell, IPortablePoweredDevice, IWirelessFluidTermHandler}
 import extracells.client.gui.GuiFluidStorage
@@ -18,7 +18,7 @@ import extracells.common.util.{ConversionUtil, FluidUtil, TFluidSelector}
 import net.minecraft.entity.player.{EntityPlayer, InventoryPlayer}
 import net.minecraft.inventory.{Slot, SlotFurnace}
 import net.minecraft.item.ItemStack
-import net.minecraftforge.fluids.{Fluid, FluidContainerRegistry, IFluidContainerItem}
+import net.minecraftforge.fluids._
 
 import scala.collection.immutable
 
@@ -168,14 +168,14 @@ class ContainerFluidStorage(val monitor: IMEMonitor[IAEFluidStack],
           val drainAmount = if (overspill == null) 0 else drained.amount - overspill.getStackSize.toInt
           if (drainAmount == 0)
             return
-          val removedFluid = item.drain(inStack, drainAmount, true)
+          val removedFluid = FluidUtil.unifyStack(item.drain(inStack, drainAmount, true))
           if (!addToSlot(1, inStack))
             return
           decrementSlot(0)
           this.monitor.injectItems(FluidUtil.createAEFluidStack(removedFluid), Actionable.MODULATE, actionSource)
 
         case _ => if (!FluidContainerRegistry.isFilledContainer(inStack)) return
-          val fluidContents = FluidUtil.getFilledFluid(inStack)
+          val fluidContents = FluidUtil.unifyStack(FluidUtil.getFilledFluid(inStack))
           val overspill = this.monitor.injectItems(FluidUtil.createAEFluidStack(fluidContents.get),
             Actionable.SIMULATE, actionSource)
           if (overspill != null && overspill.getStackSize != 0)

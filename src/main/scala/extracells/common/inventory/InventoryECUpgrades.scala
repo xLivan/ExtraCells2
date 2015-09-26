@@ -17,16 +17,4 @@ class InventoryECUpgrades(name: String, size: Int, val itemStack: ItemStack, val
     false
   }
   override def isUseableByPlayer(player: EntityPlayer) = true
-
-  /**
-   *
-   * @param itemDef Upgrade card to check
-   * @return Amount of that upgrade card in inventory
-   */
-  def checkUpgrade(itemDef: IItemDefinition): Int = {
-    var amount = 0
-    for (stack <- slots)
-      stack.filter(s1 => itemDef.isSameAs(s1)).foreach(s2 => amount += s2.stackSize)
-    amount
-  }
 }

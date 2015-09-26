@@ -86,5 +86,4 @@ abstract class AbstractFluidWidget(val fluidTermGui: TFluidWidgetGui,
   def drawTooltip(posX: Int, posY: Int, mouseX: Int, mouseY: Int): Boolean
   def drawWidget(posX: Int, posY: Int): Unit
   def mouseClicked(posX: Int, posY: Int, mouseX: Int, mouseY: Int): Unit
-
 }
