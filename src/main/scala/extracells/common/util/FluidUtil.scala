@@ -57,13 +57,10 @@ object FluidUtil {
    * @return
    */
   def getFilledFluid(stack: ItemStack): Option[FluidStack] = {
-    Option(stack).map(_.getItem).flatMap[FluidStack] {
-      case item: IFluidContainerItem => val content = item.getFluid(stack)
-        if (content != null || content.amount > 0)
-          return Option(content)
-        None
+    Option(stack).flatMap(s => Option(s.getItem)).flatMap[FluidStack] {
+      case item: IFluidContainerItem => Option(item.getFluid(stack))
       case _ => Option(FluidContainerRegistry.getFluidForFilledItem(stack))
-   }
+   }.filter(_.amount > 0)
   }
 
   /**
@@ -72,7 +69,7 @@ object FluidUtil {
    * @return
    */
   def isFluidContainer(stack: ItemStack): Boolean = {
-    Option(stack).map(_.getItem).exists {
+    Option(stack).flatMap(s => Option(s.getItem)).exists {
       case item: IFluidContainerItem => true
       case _ => FluidContainerRegistry.isContainer(stack)
     }
@@ -84,9 +81,9 @@ object FluidUtil {
    * @return
    */
   def isEmptyFluidContainer(stack: ItemStack): Boolean = {
-    Option(stack).map(_.getItem).exists {
-      case item: IFluidContainerItem => val fluid = item.getFluid(stack)
-        fluid == null || fluid.amount <= 0
+    Option(stack).flatMap(s => Option(s.getItem)).exists {
+      case item: IFluidContainerItem => Option(item.getFluid(stack))
+        .fold(true)(_.amount <= 0)
       case _ => FluidContainerRegistry.isEmptyContainer(stack)
     }
   }
@@ -97,19 +94,27 @@ object FluidUtil {
    * @return
    */
   def isFullFluidContainer(stack: ItemStack): Boolean = {
-    Option(stack).map(_.getItem).exists {
+    Option(stack).flatMap(s => Option(s.getItem)).exists {
       case item: IFluidContainerItem => item.getFluid(stack).amount == item.getCapacity(stack)
       case _ => FluidContainerRegistry.isFilledContainer(stack)
     }
   }
 
   /**
-   *
+   * Checks if a given container contains any fluid, but is not full.
    */
-  def isFilledFluidContainer(stack: ItemStack): Boolean = {
-    Option(stack).map(_.getItem).exists {
-      case item: IFluidContainerItem => isFluidContainer(stack) && !isEmptyFluidContainer(stack)
-      case _ => isFullFluidContainer(stack)
+  def isPartiallyFilledContainer(stack: ItemStack): Boolean = {
+    Option(stack).flatMap(s => Option(s.getItem)).exists {
+      case item: IFluidContainerItem => getFilledFluid(stack).exists(_.amount < item.getCapacity(stack))
+      case _ => false
+    }
+  }
+
+  def canFillContainer(stack: ItemStack): Boolean = {
+    Option(stack).flatMap(s => Option(s.getItem)).exists {
+      case item: IFluidContainerItem => isEmptyFluidContainer(stack) || isPartiallyFilledContainer(stack)
+      case _ if FluidContainerRegistry.isEmptyContainer(stack) => true
+      case _ => false
     }
   }
 
@@ -120,86 +125,73 @@ object FluidUtil {
    * @return Capacity of the container.
    */
   def getContainerCapacity(stack: ItemStack): Int = {
-    if (stack == null)
-      return 0
-    stack.getItem match {
-      case item: IFluidContainerItem => item.getCapacity(stack)
-      case _ => FluidContainerRegistry.getContainerCapacity(stack)
-    }
+    Option(stack).withFilter(s => FluidUtil.isFluidContainer(s))
+      .flatMap(s => Option(s.getItem))
+      .map {
+        case item: IFluidContainerItem => item.getCapacity(stack)
+        case _ => FluidContainerRegistry.getContainerCapacity(stack)
+      }.getOrElse(0)
   }
 
   /**
    * Attempts to fill a container with a fluid.
-   * @param stack ItemStack of container.
-   * @param fluid FluidStack to fill into container.
+   * @param stackTmp ItemStack of container.
+   * @param fluidTmp FluidStack to fill into container.
    * @return Filled container and Remaining fluid not filled. None if all has been filled into container.
    */
-  def fillFluidContainer(stack: ItemStack, fluid: FluidStack): (ItemStack, Option[FluidStack]) = {
-    if (stack == null || fluid == null)
-      return (stack, Option(fluid))
-    var changedStack: ItemStack = null
-    stack.getItem match {
-      //Handle IFluidContainerItems
-      case item: IFluidContainerItem => val filled = item.fill(changedStack, fluid, true)
-        changedStack = stack.copy()
-        if (filled < fluid.amount) {
-          val remainder = fluid.copy()
-          remainder.amount -= filled
-          (changedStack, Option(remainder))
-        }
-        else {
-          (changedStack, None)
-        }
-      //Handle every other type of itemstack.
-      //If fluid to fill is less then container capacity or container is already filled.
-      case _ => if (FluidContainerRegistry.isEmptyContainer(stack) &&
-        fluid.amount >= FluidContainerRegistry.getContainerCapacity(fluid, stack)) {
+  def fillFluidContainer(stackTmp: ItemStack, fluidTmp: FluidStack): (Option[ItemStack], Option[FluidStack]) = {
+    type output = (Option[ItemStack], Option[FluidStack])
+    val stack = Option(stackTmp)
+    val fluid = Option(fluidTmp)
 
-          changedStack = FluidContainerRegistry.fillFluidContainer(fluid, stack)
-          val filledFluid = FluidContainerRegistry.getFluidForFilledItem(changedStack)
-
-          if (fluid.amount > filledFluid.amount) {
-            val remainder = fluid.copy()
-            remainder.amount = fluid.amount - filledFluid.amount
-            (changedStack, Option(remainder))
-          }
-          else (changedStack, None)
+    (for {
+      s <- stack.filter(s2 => canFillContainer(s2)).map(_.copy())
+      f <- fluid
+    } yield {
+      Option(s.getItem).map[output] {
+        case item: IFluidContainerItem =>
+          val filled = item.fill(s, f, true)
+          (Option(s), fluid.withFilter(_.amount > filled)
+            .map(f => new FluidStack(f, f.amount - filled)))
+        case _ =>
+          val capacity = getContainerCapacity(s)
+          (Option(FluidContainerRegistry.fillFluidContainer(f, s)),
+          if (f.amount > capacity) Option(new FluidStack(f,  f.amount - capacity))
+          else None)
       }
-      else (stack, Option(fluid))
-    }
+    }).flatten.getOrElse((stack, fluid))
   }
 
   /**
    * Drains the contents of a fluid container.
-   * @param stack ItemStack representing a container/
+   * @param stackTmp ItemStack representing a container.
    * @param maxDrain Amount of fluid to drain
    * @return The drained container and the fluid actually drained. None if none is drained.
    */
-  def drainFluidContainer(stack: ItemStack, maxDrain: Int): (ItemStack, Option[FluidStack]) = {
-    if (stack == null || maxDrain < 0)
+  def drainFluidContainer(stackTmp: ItemStack, maxDrain: Int): (Option[ItemStack], Option[FluidStack]) = {
+    type output = (Option[ItemStack], Option[FluidStack])
+    val stack = Option(stackTmp)
+    if (maxDrain < 0)
       return (stack, None)
-    var changedStack: ItemStack = null
-    stack.getItem match {
+    stack.flatMap(s => Option(s.getItem)).flatMap[output] {
       //Handle IFluidContainerItem
-      case null => (stack, None)
-      case item: IFluidContainerItem => changedStack = stack.copy()
-        val drained = item.drain(changedStack, maxDrain, true)
-        if (drained == null || drained.amount == 0)
-          (stack, None)
-        else
-          (changedStack, Option(drained))
+      case item: IFluidContainerItem if stack.exists(s => !FluidUtil.isEmptyFluidContainer(s)) =>
+        val changedStack = stack.map(_.copy())
+        val drained = changedStack.map(s => item.drain(s, maxDrain, true))
+        drained.filter(_.amount > 0).map(f => (changedStack, Option(f)))
+
       //Handle basic containers.
-      case _ => if (FluidContainerRegistry.isFilledContainer(stack)) {
-        val drained = FluidContainerRegistry.getFluidForFilledItem(stack)
-        changedStack = FluidContainerRegistry.drainFluidContainer(stack)
+      case _ if stack.exists(s => FluidContainerRegistry.isFilledContainer(s)) =>
+        val drained = stack.map( s => FluidContainerRegistry.getFluidForFilledItem(s))
+        val changedStack = stack.map(s => FluidContainerRegistry.drainFluidContainer(s))
         //Failed to drain or container capacity is more then maxDrain parameter.
-        if (changedStack == null || maxDrain < drained.amount)
-          (stack, None)
+        if (changedStack.isEmpty || drained.exists(_.amount > maxDrain))
+          None
         else
-          (changedStack, Option(drained))
-      }
-      else (stack, None) //Not a filled container.
-    }
+          Option((changedStack, drained))
+
+      case _ => None
+    }.getOrElse((stack, None))
   }
 
   /**
