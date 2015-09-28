@@ -2,7 +2,9 @@ package extracells.common.util
 
 import appeng.api.AEApi
 import appeng.api.storage.data.IAEFluidStack
+import extracells.common.registries.ItemEnum
 import net.minecraft.item.ItemStack
+import net.minecraft.nbt.NBTTagCompound
 import net.minecraftforge.fluids._
 
 object FluidUtil {
@@ -44,7 +46,7 @@ object FluidUtil {
   def unifyStack(stack: FluidStack): FluidStack = unifyStack(Option(stack)).orNull
 
   /**
-   * Gets the default Fluid for the given fluid name.
+   * Gets the default Fluid for the given fluid.
    */
   def getDefaultFluid(fluid: Fluid): Fluid = if (FluidRegistry.isFluidDefault(fluid)) fluid
     else FluidRegistry.getFluid(fluid.getName)
@@ -55,9 +57,7 @@ object FluidUtil {
    * @return
    */
   def getFilledFluid(stack: ItemStack): Option[FluidStack] = {
-    if (stack == null)
-      return None
-    stack.getItem match {
+    Option(stack).map(_.getItem).flatMap[FluidStack] {
       case item: IFluidContainerItem => val content = item.getFluid(stack)
         if (content != null || content.amount > 0)
           return Option(content)
@@ -72,9 +72,7 @@ object FluidUtil {
    * @return
    */
   def isFluidContainer(stack: ItemStack): Boolean = {
-    if (stack == null)
-      return false
-    stack.getItem match {
+    Option(stack).map(_.getItem).exists {
       case item: IFluidContainerItem => true
       case _ => FluidContainerRegistry.isContainer(stack)
     }
@@ -86,9 +84,7 @@ object FluidUtil {
    * @return
    */
   def isEmptyFluidContainer(stack: ItemStack): Boolean = {
-    if (stack == null)
-      return false
-    stack.getItem match {
+    Option(stack).map(_.getItem).exists {
       case item: IFluidContainerItem => val fluid = item.getFluid(stack)
         fluid == null || fluid.amount <= 0
       case _ => FluidContainerRegistry.isEmptyContainer(stack)
@@ -101,13 +97,22 @@ object FluidUtil {
    * @return
    */
   def isFullFluidContainer(stack: ItemStack): Boolean = {
-    if (stack == null)
-      return false
-    stack.getItem match {
+    Option(stack).map(_.getItem).exists {
       case item: IFluidContainerItem => item.getFluid(stack).amount == item.getCapacity(stack)
       case _ => FluidContainerRegistry.isFilledContainer(stack)
     }
   }
+
+  /**
+   *
+   */
+  def isFilledFluidContainer(stack: ItemStack): Boolean = {
+    Option(stack).map(_.getItem).exists {
+      case item: IFluidContainerItem => isFluidContainer(stack) && !isEmptyFluidContainer(stack)
+      case _ => isFullFluidContainer(stack)
+    }
+  }
+
 
   /**
    * Gets the fluid capacity of a container ItemStack
@@ -196,4 +201,31 @@ object FluidUtil {
       else (stack, None) //Not a filled container.
     }
   }
+
+  /**
+   * Gets a Placeholder ItemStack
+   */
+
+  def getFluidPlaceholder(fluid: Fluid): Option[ItemStack] = {
+    if (!FluidRegistry.isFluidRegistered(fluid))
+      return None
+    val nbt = new NBTTagCompound
+    nbt.setString("fluidName" ,fluid.getName)
+    val stack = new ItemStack(ItemEnum.FLUIDITEM.getItem, 1)
+    stack.setTagCompound(nbt)
+    Option(stack)
+  }
+
+  /**
+   * Gets a [[Fluid]] from a Placeholder ItemStack
+   *
+   * @param stack Placeholder ItemStack
+   */
+
+  def getFluidFromPlaceholder(stack: ItemStack): Option[Fluid] = {
+    Option(stack)
+      .filter(s => s.getItem == ItemEnum.FLUIDITEM.getItem && s.hasTagCompound)
+      .map(s => FluidRegistry.getFluid(s.getTagCompound.getString("fluidName")))
+  }
+
 }
