@@ -34,34 +34,17 @@ class InventoryECFluidConfig(name: String, val cellItem: ItemStack, size: Int = 
   }
 
   override def setInventorySlotContents(slot: Int, stack: ItemStack): Unit = {
-    Option(stack).map {
+    val placeholder = Option(stack).flatMap[Fluid] {
       case st if st.getItem == ItemEnum.FLUIDITEM.getItem =>
         FluidUtil.getFluidFromPlaceholder(st)
 
-      case st if FluidUtil.is
-    }
+      case st if FluidUtil.isFilledFluidContainer(st) =>
+        FluidUtil.getFilledFluid(st).map(_.getFluid)
 
+      case _ => None
+    }.flatMap(f => FluidUtil.getFluidPlaceholder(f))
 
-
-    if (stack == null) {
-      super.setInventorySlotContents(slot, null)
-      return
-    }
-    /** Get the fluid of a container */
-    val fluid: Option[Fluid] = if (stack.getItem == ItemEnum.FLUIDITEM.getItem) {
-      FluidUtil.getFluidFromPlaceholder(stack)
-    }
-    else {
-      if (!isItemValidForSlot(slot, stack))
-        None
-      else {
-        FluidUtil.getFilledFluid(stack).map(_.getFluid)
-      }
-    }
-    /** And set the slot contents using placeholder item. */
-    super.setInventorySlotContents(slot,
-      FluidUtil.getFluidPlaceholder(fluid.orNull)
-        .orNull)
+    super.setInventorySlotContents(slot, placeholder.orNull)
   }
 
   override def markDirty(): Unit = {
