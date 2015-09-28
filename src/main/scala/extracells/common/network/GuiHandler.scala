@@ -51,7 +51,7 @@ object GuiHandler extends IGuiHandler {
     if (world.eq(null) && gui.isEmpty && sideID >= 6)
       gui = sideID - 6 match {
 
-        case 0 => Option(new GuiFluidStorage(player, "extracells.part.fluid.terminal.name"))
+        //case 0 => Option(new GuiFluidStorage(player, "extracells.part.fluid.terminal.name"))
         case _ => None
       }
 
@@ -85,8 +85,8 @@ object GuiHandler extends IGuiHandler {
     /** Handle GUI id's */
     if (world.eq(null) && container.isEmpty && sideID >= 6)
       container = sideID - 6 match {
-        case 0 => val mon = tempArgs.map(_(0).asInstanceOf[IMEMonitor[IAEFluidStack]])
-          Option(new ContainerFluidStorage(mon.get, player))
+        //case 0 => val mon = tempArgs.map(_(0).asInstanceOf[IMEMonitor[IAEFluidStack]])
+          //Option(new ContainerFluidStorage(mon.get, player))
         // 1&3 are placeholders TODO: Portable terminals
         case _ => None
       }

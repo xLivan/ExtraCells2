@@ -38,10 +38,7 @@ class InventoryECFluidConfig(name: String, val cellItem: ItemStack, size: Int = 
       case st if st.getItem == ItemEnum.FLUIDITEM.getItem =>
         FluidUtil.getFluidFromPlaceholder(st)
 
-      case st if FluidUtil.isFilledFluidContainer(st) =>
-        FluidUtil.getFilledFluid(st).map(_.getFluid)
-
-      case _ => None
+      case st => FluidUtil.getFilledFluid(st).map(_.getFluid)
     }.flatMap(f => FluidUtil.getFluidPlaceholder(f))
 
     super.setInventorySlotContents(slot, placeholder.orNull)

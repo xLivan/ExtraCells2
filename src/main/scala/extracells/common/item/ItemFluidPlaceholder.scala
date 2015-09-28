@@ -1,17 +1,19 @@
 package extracells.common.item
 
+import extracells.common.registries.ItemEnum
 import net.minecraft.item.{ItemStack, Item}
-import net.minecraftforge.fluids.FluidRegistry
+import net.minecraft.nbt.NBTTagCompound
+import net.minecraftforge.fluids.{Fluid, FluidStack, FluidRegistry}
 
 class ItemFluidPlaceholder extends Item {
 
   override def getItemStackDisplayName(stack: ItemStack): String = {
-    val fluid = FluidRegistry.getFluid(stack.getMetadata)
-    if (fluid == null || fluid.getBlock == null)
-      return null
-    val item = Item.getItemFromBlock(fluid.getBlock)
-    if (item == null)
-      return fluid.getName
-    return item.getItemStackDisplayName(new ItemStack(item))
+    if (!stack.hasTagCompound)
+      return "errorNoTagCompound"
+    val fluidName = stack.getTagCompound.getString("fluidName")
+    val fluid = FluidRegistry.getFluid(fluidName)
+    if (fluid eq null)
+      return "errorNoSuchFluid: ".concat(fluidName)
+    fluid.getLocalizedName(new FluidStack(fluid, 0))
   }
 }

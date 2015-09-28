@@ -5,6 +5,7 @@ import net.minecraft.entity.player.EntityPlayer
 
 trait TGuiPart {
   @SideOnly(Side.CLIENT)
-  def getServerGuiElement(entityPlayer: EntityPlayer) : AnyRef = null
-  def getClientGuiElement(entityPlayer: EntityPlayer) : AnyRef = null
+  def getServerGuiElement(entityPlayer: EntityPlayer): AnyRef
+
+  def getClientGuiElement(entityPlayer: EntityPlayer): AnyRef
 }

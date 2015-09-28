@@ -16,12 +16,10 @@ import org.lwjgl.input.Mouse
 import org.lwjgl.opengl.GL11
 
 import scala.collection.mutable.IndexedSeq
+//Todo: Implement
+class GuiFluidStorage(player: EntityPlayer, val guiName: String, val container: ContainerFluidStorage)
+  extends GuiContainer(container) with TFluidSelectorGui{
 
-class GuiFluidStorage(player: EntityPlayer, val guiName: String)
-  extends GuiContainer(new ContainerFluidStorage(player)) with TFluidSelectorGui{
-
-  val container: ContainerFluidStorage = this.inventorySlots
-    .asInstanceOf[ContainerFluidStorage]
   //val fluidWidgets: IndexedSeq[]
 
   var searchBox: GuiTextField = _

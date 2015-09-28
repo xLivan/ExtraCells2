@@ -76,7 +76,7 @@ object PacketHelper {
   }
 
   def writePart(part: PartECBase, out: ByteBuf): Unit = {
-    writeTileEntity(part.getHost.getTile, out)
+    part.getHost.foreach(ph => writeTileEntity(ph.getTile, out))
     out.writeByte(part.getSide.ordinal)
   }
 

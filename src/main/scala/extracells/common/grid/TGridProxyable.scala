@@ -4,9 +4,9 @@ import appeng.api.networking.IGridHost
 import appeng.api.util.DimensionalCoord
 
 trait TGridProxyable extends IGridHost{
-  def getProxy : ECGridProxy
+  def getProxy : Option[ECGridProxy]
 
-  def getLocation : DimensionalCoord
+  def getLocation : Option[DimensionalCoord]
 
-  def gridChanged : Unit
+  def gridChanged() : Unit
 }

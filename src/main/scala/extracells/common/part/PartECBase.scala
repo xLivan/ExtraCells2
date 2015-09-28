@@ -5,55 +5,57 @@ import java.util
 
 import appeng.api.AEApi
 import appeng.api.implementations.IPowerChannelState
-import appeng.api.networking.events.{MENetworkPowerStatusChange, MENetworkEventSubscribe}
-import appeng.api.networking.security.IActionHost
 import appeng.api.networking.IGridNode
+import appeng.api.networking.events.{MENetworkEventSubscribe, MENetworkPowerStatusChange}
+import appeng.api.networking.security.IActionHost
+import appeng.api.networking.ticking.IGridTickable
 import appeng.api.parts._
 import appeng.api.util.{AECableType, AEColor, DimensionalCoord}
 import cpw.mods.fml.common.FMLCommonHandler
 import cpw.mods.fml.relauncher.{Side, SideOnly}
-import extracells.common.grid.{TGridProxyable, ECGridProxy}
 import extracells.client.render.TextureManager
+import extracells.common.grid.{ECGridProxy, TGridProxyable}
+import extracells.common.network.GuiHandler
+import extracells.common.registries.{ItemEnum, PartEnum}
 import io.netty.buffer.ByteBuf
-import net.minecraft.client.renderer.{Tessellator, RenderBlocks}
-import net.minecraft.entity.player.EntityPlayer
+import net.minecraft.client.renderer.{RenderBlocks, Tessellator}
+import net.minecraft.entity.player.{EntityPlayer, EntityPlayerMP}
+import net.minecraft.entity.{Entity, EntityLivingBase}
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.NBTTagCompound
 import net.minecraft.tileentity.TileEntity
-import net.minecraft.util.IIcon
+import net.minecraft.util.{IIcon, Vec3}
 import net.minecraftforge.common.util.ForgeDirection
 
 abstract class PartECBase extends IPart with TGridProxyable with IActionHost with IPowerChannelState {
-  protected var node: IGridNode = _
-  protected var host: IPartHost = _
-  protected var tile: TileEntity = _
-  protected var hostTile: TileEntity = _
-  protected var proxy: ECGridProxy = _
-  protected var side: ForgeDirection = _
-  protected var redstonePowered: Boolean = _
-  protected var isActive: Boolean = _
-  protected var isPowered: Boolean = false
-  protected var owner: EntityPlayer = _
-  protected var powerUsage: Double = _
+  protected var node: Option[IGridNode] = None
+  protected var host: Option[IPartHost] = None
+  protected var tile: Option[TileEntity] = None
+  protected var hostTile: Option[TileEntity] = None
+  protected var proxy: Option[ECGridProxy] = None
+  protected var side: ForgeDirection = ForgeDirection.UNKNOWN
+  protected var redstonePowered: Boolean = false
+  protected var owner: Option[EntityPlayer] = None
+  protected var powerUsage: Double = 0.0
+  protected var sleeping = false
 
+  var isActive = false
+  var isPowered = false
 
   def addToWorld() {
     if (FMLCommonHandler.instance().getEffectiveSide.isClient)
       return
-    this.proxy = new ECGridProxy(this)
-    this.node = AEApi.instance.createGridNode(this.proxy)
-    if (this.node != null) {
-      if (this.owner != null)
-        this.node.setPlayerID(AEApi.instance.registries.players().getID(this.owner))
-      this.node.updateState()
+    this.proxy = Option(new ECGridProxy(this))
+    this.node = this.proxy.map(pr => AEApi.instance.createGridNode(pr))
+    for (n <- this.node) {
+      this.owner.foreach(p =>
+        n.setPlayerID(AEApi.instance.registries.players().getID(p)))
+      n.updateState()
     }
-
   }
 
   def removeFromWorld(): Unit = {
-    if (this.node == null)
-      return
-    this.node.destroy()
+    this.node.foreach(_.destroy())
   }
 
   def initializePart(partStack: ItemStack): Unit = {
@@ -62,29 +64,61 @@ abstract class PartECBase extends IPart with TGridProxyable with IActionHost wit
   }
 
   def saveData(): Unit = {
-    if (this.host == null)
+    this.host.foreach(_.markForSave())
+  }
+
+  def wakePart(): Unit = {
+    if (!this.isInstanceOf[IGridTickable] || !this.sleeping)
       return
-    this.host.markForSave()
+    this.sleeping = false
+    for {
+      tm <- this.proxy.flatMap(_.getTickManager)
+      gn <- this.node
+    } tm.wakeDevice(gn)
+  }
+
+  def alertPart(): Unit = {
+    if (!this.isInstanceOf[IGridTickable])
+      return
+    for {
+      tm <- this.proxy.flatMap(_.getTickManager)
+      gn <- this.node
+    } tm.alertDevice(gn)
+  }
+
+  def sleepPart(): Unit = {
+    if (!this.isInstanceOf[IGridTickable] || this.sleeping)
+      return
+    this.sleeping = true
+    for {
+      tm <- this.proxy.flatMap(_.getTickManager)
+      gn <- this.node
+    } tm.sleepDevice(gn)
   }
 
   override def securityBreak(): Unit = {
 
+
   }
 
 
-  def isValid: Boolean = this.host.getPart(this.side).equals(this)
+  def isValid: Boolean = this.host.map(_.getPart(this.side)).exists(_ eq this)
+  override def isProvidingWeakPower: Int = 0
+  override def isProvidingStrongPower: Int = 0
+  override def isLadder(entity: EntityLivingBase): Boolean = false
+  override def isSolid: Boolean = false
 
   override def canBePlacedOn(what: BusSupport): Boolean = what != BusSupport.DENSE_CABLE
 
   override def canConnectRedstone: Boolean = false
 
-  def getDrops(drops: util.List[ItemStack], wrenched: Boolean): Unit
+  def getDrops(drops: util.List[ItemStack], wrenched: Boolean): Unit = {}
 
-  def getCableConnectionType(dir: ForgeDirection) : AECableType = AECableType.SMART
+  def getCableConnectionType(dir: ForgeDirection) : AECableType = AECableType.GLASS
 
   def getBoxes(bch: IPartCollisionHelper): Unit
 
-  def getBreakingTexture: IIcon
+  def getBreakingTexture: IIcon = TextureManager.BUS_SIDE.getTexture
 
   def getLightLevel: Int = 0
 
@@ -92,54 +126,83 @@ abstract class PartECBase extends IPart with TGridProxyable with IActionHost wit
 
   def getPowerUsage: Double = this.powerUsage
 
-  def getHostTile: TileEntity = this.hostTile
+  def getHostTile: Option[TileEntity] = this.hostTile
 
-  def getTile: TileEntity = this.tile
+  def getTile: Option[TileEntity] = this.tile
 
   def getItemStack(partType: PartItemStack): ItemStack = {
-    //TODO: Implement function AFTER implmenting PARTITEM
-    null
+    val stack = new ItemStack(ItemEnum.PARTITEM.getItem, 1, PartEnum.getPartID(this))
+    val nbt = new NBTTagCompound
+    partType match {
+      case PartItemStack.Wrench => writeToNBT(nbt)
+        stack.setTagCompound(nbt)
+      case _ =>
+    }
+    stack
   }
 
-  final def getLocation : DimensionalCoord = new DimensionalCoord(this.tile.getWorld,
-    this.tile.xCoord, this.tile.yCoord, this.tile.zCoord)
+  final override def getLocation: Option[DimensionalCoord] = this.tile map { tile =>
+    new DimensionalCoord(tile.getWorld, tile.xCoord, tile.yCoord, tile.zCoord)}
 
-  def getNode : IGridNode = this.node
+  override def getGridNode: IGridNode = this.node.orNull
 
-  def getNode(dir: ForgeDirection) : IGridNode = this.node
+  override def getGridNode(dir: ForgeDirection): IGridNode = getGridNode
 
-  def getHost : IPartHost = this.host
+  def getHost: Option[IPartHost] = this.host
 
-  final def getProxy : ECGridProxy = this.proxy
+  final def getProxy: Option[ECGridProxy] = this.proxy
 
-  final def getActionableNode : IGridNode = this.node
+  final def getActionableNode: IGridNode = this.node.orNull
 
-  final def getExternalFacingNode : IGridNode = null
+  final def getExternalFacingNode: IGridNode = null
 
-  override def cableConnectionRenderTo() : Int
+  override def setPartHostInfo(side: ForgeDirection, host: IPartHost, tile: TileEntity): Unit = {
+    this.side = side
+    this.host = Option(host)
+    this.tile = Option(tile)
+  }
 
   @MENetworkEventSubscribe
-  def onNetworkPowerStatusChange(e: MENetworkPowerStatusChange) : Unit = {
-    if (this.node == null)
-      return
-    this.isActive = this.node.isActive
+  def onNetworkPowerStatusChange(e: MENetworkPowerStatusChange): Unit = {
+    this.isActive = this.node.exists(_.isActive)
   }
 
-  override def readFromNBT(data: NBTTagCompound) : Unit = {
-    if (data.hasKey("node") && this.node != null) {
-      this.node.loadFromNBT("node0", data.getCompoundTag("node"))
-      this.node.updateState()
+  override def onPlacement(player: EntityPlayer,
+                           held: ItemStack,
+                           side: ForgeDirection): Unit = {
+    this.owner = Option(player)
+  }
+
+  override def onActivate(player: EntityPlayer, pos: Vec3): Boolean = {
+    for (h <- hostTile) player match {
+      case player: EntityPlayerMP => GuiHandler.launchGui(GuiHandler.getSideOrID(this),
+        player, h.getWorld, h.xCoord, h.yCoord, h.zCoord)
+        return true
+      case _ =>
+    }
+    false
+  }
+
+  override def onShiftActivate(player: EntityPlayer, pos: Vec3): Boolean = false
+  override def onEntityCollision(entity: Entity): Unit = {}
+  override def onNeighborChanged(): Unit = {}
+
+  def gridChanged(): Unit = {}
+
+  override def readFromNBT(data: NBTTagCompound): Unit = {
+    if (data.hasKey("node")) {
+      this.node foreach { n =>
+        n.loadFromNBT("node0", data.getCompoundTag("node"))
+        n.updateState()
+      }
     }
   }
 
-  override def writeToNBT(data: NBTTagCompound) : Unit = {
-    if (this.node == null)
-      return
+  override def writeToNBT(data: NBTTagCompound): Unit = {
     val nodeTag: NBTTagCompound = new NBTTagCompound
-    this.node.saveToNBT("node0", nodeTag)
+    this.node foreach {_.saveToNBT("node0", nodeTag)}
     data.setTag("node", nodeTag)
   }
-
 
   @throws(classOf[IOException])
   override def readFromStream(data: ByteBuf) : Boolean = {
@@ -150,7 +213,7 @@ abstract class PartECBase extends IPart with TGridProxyable with IActionHost wit
 
   @throws(classOf[IOException])
   override def writeToStream(data: ByteBuf) : Unit = {
-    data.writeBoolean(this.node != null && this.node.isActive)
+    data.writeBoolean(this.node.exists(_.isActive))
     data.writeBoolean(this.isPowered)
   }
 
@@ -184,4 +247,25 @@ abstract class PartECBase extends IPart with TGridProxyable with IActionHost wit
     rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()(1), ForgeDirection.WEST, renderer)
   }
 
+  @SideOnly(Side.CLIENT)
+  def renderStaticBusLights(x: Int, y: Int, z: Int, rh: IPartRenderHelper, renderer: RenderBlocks) {
+    val ts: Tessellator = Tessellator.instance
+    val otherIcon: IIcon = TextureManager.BUS_COLOR.getTextures()(0)
+    val side: IIcon = TextureManager.BUS_SIDE.getTexture
+    rh.setTexture(otherIcon, otherIcon, side, side, otherIcon, otherIcon)
+    rh.renderBlock(x, y, z, renderer)
+    if (isActive) {
+      ts.setBrightness(13 << 20 | 13 << 4)
+      ts.setColorOpaque_I(this.host.get.getColor.blackVariant)
+    }
+    else {
+      ts.setColorOpaque_I(0x000000)
+    }
+    rh.renderFace(x, y, z, TextureManager.BUS_COLOR.getTextures()(1), ForgeDirection.UP, renderer)
+    rh.renderFace(x, y, z, TextureManager.BUS_COLOR.getTextures()(1), ForgeDirection.DOWN, renderer)
+    rh.renderFace(x, y, z, TextureManager.BUS_COLOR.getTextures()(1), ForgeDirection.NORTH, renderer)
+    rh.renderFace(x, y, z, TextureManager.BUS_COLOR.getTextures()(1), ForgeDirection.EAST, renderer)
+    rh.renderFace(x, y, z, TextureManager.BUS_COLOR.getTextures()(1), ForgeDirection.SOUTH, renderer)
+    rh.renderFace(x, y, z, TextureManager.BUS_COLOR.getTextures()(1), ForgeDirection.WEST, renderer)
+  }
 }

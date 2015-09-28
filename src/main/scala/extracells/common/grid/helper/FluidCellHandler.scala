@@ -1,6 +1,6 @@
 package extracells.common.grid.helper
 
-import appeng.api.implementations.tiles.{IMEChest, IChestOrDrive}
+import appeng.api.implementations.tiles.{IChestOrDrive, IMEChest}
 import appeng.api.networking.security.PlayerSource
 import appeng.api.storage._
 import appeng.api.storage.data.{IAEFluidStack, IAEStack}
@@ -12,17 +12,15 @@ import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.item.ItemStack
 import net.minecraft.util.IIcon
 import net.minecraftforge.common.util.ForgeDirection
-import net.minecraftforge.fluids.Fluid
 
-import scala.collection.JavaConverters._
-class FluidCellHandler extends ICellHandler {
+/*_*/class FluidCellHandler extends ICellHandler { /*_*/
   type MEInv = IMEInventory[_ <: IAEStack[_ <: IAEStack[_ <: AnyRef]]]
   type MEInvH = IMEInventoryHandler[_ <: IAEStack[_ <: IAEStack[_ <: AnyRef]]]
-  //TODO: Add cell idle drain values AND FINISH IMPLEMENTING.
-  override def cellIdleDrain(is: ItemStack, handler: MEInv): Double = 0.0
+  //TODO: Add cell idle drain values
+  /*_*/override def cellIdleDrain(is: ItemStack, handler: MEInv): Double = 0.0  /*_*/
 
   //Despite the error, its actually correct. Silly intelliJ plugin.
-  override def getStatusForCell(is: ItemStack, handler: MEInv): Int = {
+  /*_*/override def getStatusForCell(is: ItemStack, handler: MEInv): Int = { /*_*/
     if (handler == null)
       return 0
 
@@ -45,19 +43,19 @@ class FluidCellHandler extends ICellHandler {
     new FluidCellInventoryHandler(stack, saveProvider, stack.getItem.asInstanceOf[IFluidStorageCell].getPreformatted(stack))
   }
 
-  override def openChestGui(player: EntityPlayer, chest: IChestOrDrive,
+  /*_*/override def openChestGui(player: EntityPlayer, chest: IChestOrDrive,
                             cellHandler: ICellHandler, inv: MEInvH,
-                            is: ItemStack, chan: StorageChannel): Unit = {
+                            is: ItemStack, chan: StorageChannel): Unit = {  /*_*/
     if (chan != StorageChannel.FLUIDS)
       return
 
-    val monitorable: Option[IStorageMonitorable] = Option(chest).flatMap {
+    val inv: Option[IStorageMonitorable] = Option(chest).flatMap {
       case chest: IMEChest => Option(chest.getMonitorable(ForgeDirection.UNKNOWN,
         new PlayerSource(player, chest)))
       case _ => None
     }
 
-    monitorable.foreach(m => GuiHandler.launchGui(GuiHandler.getSideOrID(0),
+    inv.foreach(m => GuiHandler.launchGui(GuiHandler.getSideOrID(0),
       player, Array.apply[AnyRef](m.getFluidInventory)))
   }
 

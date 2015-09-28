@@ -10,7 +10,7 @@ class SlotPlayerInventory(inv: IInventory, val container: ContainerFluidStorage,
     if (player == null || this.container == null)
       return true
     val stack: ItemStack = player.getCurrentEquippedItem
-    if (stack == null || !this.container.hasWirelessTermHandler)
+    if (stack == null)
       return true
     if (stack == this.inventory.getStackInSlot(getSlotIndex))
       return false

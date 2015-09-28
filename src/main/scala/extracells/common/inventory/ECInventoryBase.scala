@@ -5,7 +5,9 @@ import net.minecraft.inventory.IInventory
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.{NBTTagCompound, NBTTagList}
 
-abstract class ECInventoryBase(val name: String, val size: Int, val stackLimit: Int, receiver: TInventoryUpdateReceiver = null) extends IInventory{
+abstract class ECInventoryBase(val name: String, val size: Int,
+                               val stackLimit: Int, receiver: TInventoryUpdateReceiver = null)
+    extends IInventory {
   val updateReceiver: Option[TInventoryUpdateReceiver] = Option(receiver)
   var slots: Array[Option[ItemStack]] = Array.fill(size)(None)
 
@@ -63,8 +65,10 @@ abstract class ECInventoryBase(val name: String, val size: Int, val stackLimit: 
   override def getStackInSlot(index: Int): ItemStack = slots(index).orNull
   override def getStackInSlotOnClosing(index: Int): ItemStack = {
     var stack: ItemStack = null
-    slots(index).foreach(s => {stack = s
-      slots(index) = None})
+    slots(index).foreach(s => {
+      stack = s
+      slots.update(index, None)
+    })
     stack
   }
 
@@ -100,5 +104,4 @@ abstract class ECInventoryBase(val name: String, val size: Int, val stackLimit: 
     }
     tagList
   }
-
 }

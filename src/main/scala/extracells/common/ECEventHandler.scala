@@ -21,7 +21,8 @@ class ECEventHandler {
         && e.side == Side.SERVER && e.player.ne(null))
       e.player.openContainer match {
         //Energy tick for portable items.
-        case container: ContainerFluidStorage => container.energyTick()
+        //case container: ContainerFluidStorage => container.energyTick()
+        case _ =>
       }
   }
 }
