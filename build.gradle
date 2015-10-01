@@ -73,7 +73,7 @@ repositories {
     }
 
     ivy {
-        name "BuildCraft"
+        name = "BuildCraft"
         artifactPattern "http://www.mod-buildcraft.com/releases/BuildCraft/[revision]/[module]-[revision]-[classifier].[ext]"
     }
 }
