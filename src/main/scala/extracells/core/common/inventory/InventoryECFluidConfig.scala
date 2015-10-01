@@ -11,8 +11,10 @@ import net.minecraftforge.fluids.{Fluid, FluidRegistry}
 
 class InventoryECFluidConfig(name: String, val cellItem: ItemStack, size: Int = 63)
     extends ECInventoryBase(name , size, 1) {
-  if (cellItem.hasTagCompound)
+  if (cellItem.hasTagCompound) {
     readFromNBT(cellItem.getTagCompound.getTagList(InventoryECFluidConfig.tagName, Constants.NBT.TAG_COMPOUND))
+    this.slots = this.slots.sortWith { (o1, o2) => (o1.isDefined == o2.isDefined) || o1.isDefined }
+  }
 
   override def isUseableByPlayer(player: EntityPlayer): Boolean = true
 
@@ -72,14 +74,10 @@ class InventoryECFluidConfig(name: String, val cellItem: ItemStack, size: Int = 
         .map(_ - 1)
         .filter(i => this.slots.indices contains i)
 
-      ExtraCells.logger.info(slot.toString)
-      ExtraCells.logger.info(fluid.toString)
-
       for {
         s <- slot
         f <- fluid
       } {
-        ExtraCells.logger.info("Loading NBT")
         this.slots.update(s, FluidUtil.getFluidPlaceholder(f))
       }
     }
@@ -93,7 +91,6 @@ class InventoryECFluidConfig(name: String, val cellItem: ItemStack, size: Int = 
       this.slots(i)
         .flatMap {s => FluidUtil.getFluidFromPlaceholder(s)}
         .foreach {f =>
-          ExtraCells.logger.info("Saving NBT slot" + i)
           val tag = new NBTTagCompound
           tag.setInteger("slot", i + 1)
           tag.setString("fluid", InventoryECFluidConfig.strPrefix.concat(f.getName))
