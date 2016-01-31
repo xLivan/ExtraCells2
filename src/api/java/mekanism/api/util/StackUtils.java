@@ -59,12 +59,13 @@ public final class StackUtils
 		{
 			return check == wild;
 		}
+		
 		return wild.getItem() == check.getItem() && (wild.getItemDamage() == OreDictionary.WILDCARD_VALUE || wild.getItemDamage() == check.getItemDamage());
 	}
 
 	public static boolean equalsWildcardWithNBT(ItemStack wild, ItemStack check)
 	{
-		return equalsWildcard(wild, check) && (wild.stackTagCompound == null ? check.stackTagCompound == null : (wild.stackTagCompound == check.stackTagCompound || wild.stackTagCompound.equals(check.stackTagCompound)));
+		return equalsWildcard(wild, check) && (!wild.hasTagCompound() ? !check.hasTagCompound() : (wild.getTagCompound() == check.getTagCompound() || wild.getTagCompound().equals(check.getTagCompound())));
 	}
 
 	public static List<ItemStack> even(ItemStack stack1, ItemStack stack2)

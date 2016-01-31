@@ -8,12 +8,15 @@ import mekanism.api.util.BlockInfo;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraftforge.oredict.OreDictionary;
-import cpw.mods.fml.common.eventhandler.Event;
+import net.minecraftforge.fml.common.eventhandler.Event;
 
 public class MekanismAPI
 {
 	//Add a BlockInfo value here if you don't want a certain block to be picked up by cardboard boxes
 	private static Set<BlockInfo> cardboardBoxIgnore = new HashSet<BlockInfo>();
+	
+	/** Mekanism debug mode */
+	public static boolean debug = false;
 
 	public static boolean isBlockCompatible(Item item, int meta)
 	{

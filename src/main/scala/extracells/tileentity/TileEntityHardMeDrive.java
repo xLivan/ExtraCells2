@@ -8,6 +8,7 @@ import appeng.api.networking.events.MENetworkCellArrayUpdate;
 import appeng.api.networking.security.IActionHost;
 import appeng.api.storage.*;
 import appeng.api.util.AECableType;
+import appeng.api.util.AEPartLocation;
 import appeng.api.util.DimensionalCoord;
 import extracells.api.IECTileEntity;
 import extracells.gridblock.ECGridBlockHardMEDrive;
@@ -57,7 +58,7 @@ public class TileEntityHardMeDrive extends TileBase implements IActionHost, IECT
 
     @Override
     public IGridNode getActionableNode() {
-        return getGridNode(ForgeDirection.UNKNOWN);
+        return getGridNode(AEPartLocation.INTERNAL);
     }
 
     @Override
@@ -84,8 +85,8 @@ public class TileEntityHardMeDrive extends TileBase implements IActionHost, IECT
     }
 
     @Override
-    public IGridNode getGridNode(ForgeDirection forgeDirection) {
-        if (isFirstGridNode && hasWorldObj() && !getWorldObj().isRemote){
+    public IGridNode getGridNode(AEPartLocation forgeDirection) {
+        if (isFirstGridNode && hasWorldObj() && !getWorld().isRemote){
             isFirstGridNode = false;
             try{
                 node = AEApi.instance().createGridNode(gridBlock);
@@ -99,7 +100,7 @@ public class TileEntityHardMeDrive extends TileBase implements IActionHost, IECT
     }
 
     @Override
-    public AECableType getCableConnectionType(ForgeDirection forgeDirection) {
+    public AECableType getCableConnectionType(AEPartLocation forgeDirection) {
         return AECableType.SMART;
     }
 
@@ -141,11 +142,7 @@ public class TileEntityHardMeDrive extends TileBase implements IActionHost, IECT
                     .registries().cell()
                     .getCellInventory(stackInSlot, null, StorageChannel.ITEMS);
             if (inventoryHandler == null)
-                inventoryHandler = AEApi
-                        .instance()
-                        .registries()
-                        .cell()
-                        .getCellInventory(stackInSlot, null,
+                inventoryHandler = AEApi.instance().registries().cell().getCellInventory(stackInSlot, null,
                                 StorageChannel.FLUIDS);
 
             ICellHandler cellHandler = AEApi.instance().registries().cell()
@@ -157,13 +154,13 @@ public class TileEntityHardMeDrive extends TileBase implements IActionHost, IECT
                         stackInSlot, inventoryHandler);
             }
         }
-        IGridNode node = getGridNode(ForgeDirection.UNKNOWN);
+        IGridNode node = getGridNode(AEPartLocation.INTERNAL);
         if (node != null) {
             IGrid grid = node.getGrid();
             if (grid != null) {
                 grid.postEvent(new MENetworkCellArrayUpdate());
             }
-            getWorldObj().markBlockForUpdate(xCoord, yCoord, zCoord);
+            getWorld().markBlockForUpdate(pos);
         }
     }
 
@@ -204,6 +201,6 @@ public class TileEntityHardMeDrive extends TileBase implements IActionHost, IECT
             nbtTag.setByte("status#" + i, aCellStati);
             i++;
         }
-        return new S35PacketUpdateTileEntity(this.xCoord, this.yCoord, this.zCoord, 1, nbtTag);
+        return new S35PacketUpdateTileEntity(pos, 1, nbtTag);
     }
 }

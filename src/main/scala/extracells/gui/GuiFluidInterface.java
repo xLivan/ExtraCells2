@@ -1,6 +1,7 @@
 package extracells.gui;
 
 import appeng.api.implementations.ICraftingPatternItem;
+import appeng.api.util.AEPartLocation;
 import extracells.api.IFluidInterface;
 import extracells.container.ContainerFluidInterface;
 import extracells.gui.widget.WidgetFluidTank;
@@ -16,6 +17,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StatCollector;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -28,7 +30,7 @@ public class GuiFluidInterface extends GuiContainer {
 	private ResourceLocation guiTexture = new ResourceLocation("extracells",
 			"textures/gui/interfacefluid.png");
 	private EntityPlayer player;
-	private ForgeDirection partSide = ForgeDirection.UNKNOWN;
+	private AEPartLocation partSide = AEPartLocation.INTERNAL;
 
 	public GuiFluidInterface(EntityPlayer player, IFluidInterface fluidInterface) {
 		super(new ContainerFluidInterface(player, fluidInterface));
@@ -38,8 +40,7 @@ public class GuiFluidInterface extends GuiContainer {
 		((ContainerFluidInterface) this.inventorySlots).gui = this;
 	}
 
-	public GuiFluidInterface(EntityPlayer player,
-			IFluidInterface fluidInterface, ForgeDirection side) {
+	public GuiFluidInterface(EntityPlayer player, IFluidInterface fluidInterface, AEPartLocation side) {
 		this(player, fluidInterface);
 		this.partSide = side;
 	}
@@ -111,12 +112,12 @@ public class GuiFluidInterface extends GuiContainer {
 		this.guiTop = (this.height - this.ySize) / 2;
 		for (int i = 0; i < this.tanks.length; i++) {
 			if (this.partSide != null
-					&& this.partSide != ForgeDirection.UNKNOWN
+					&& this.partSide != AEPartLocation.INTERNAL
 					&& this.partSide.ordinal() != i)
 				continue;
 			this.tanks[i] = new WidgetFluidTank(
-					this.fluidInterface.getFluidTank(ForgeDirection
-							.getOrientation(i)), i * 20 + 30, 16,
+					this.fluidInterface.getFluidTank(EnumFacing.
+							.fromOrdinal(i)), i * 20 + 30, 16,
 					ForgeDirection.getOrientation(i));
 			if (this.fluidInterface instanceof IFluidSlotPartOrBlock) {
 				this.filter[i] = new WidgetFluidSlot(this.player,
