@@ -16,11 +16,8 @@ import appeng.api.storage.IMEMonitor;
 import appeng.api.storage.data.IAEFluidStack;
 import appeng.api.util.AECableType;
 import appeng.api.util.AEColor;
+import appeng.api.util.AEPartLocation;
 import appeng.api.util.DimensionalCoord;
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.Optional;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 import extracells.gridblock.ECBaseGridBlock;
 import extracells.integration.Integration;
 import extracells.network.GuiHandler;
@@ -29,8 +26,8 @@ import extracells.registries.PartEnum;
 import extracells.render.TextureManager;
 import io.netty.buffer.ByteBuf;
 import mekanism.api.gas.IGasHandler;
-import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -38,11 +35,15 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
-import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.fluids.IFluidHandler;
+import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.Optional;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.io.IOException;
 import java.util.List;
@@ -52,7 +53,7 @@ public abstract class PartECBase implements IPart, IGridHost, IActionHost,
 		IPowerChannelState {
 
 	private IGridNode node;
-	private ForgeDirection side;
+	private AEPartLocation side;
 	private IPartHost host;
 	protected TileEntity tile;
 	private ECBaseGridBlock gridBlock;
@@ -133,12 +134,12 @@ public abstract class PartECBase implements IPart, IGridHost, IActionHost,
 	public abstract void getBoxes(IPartCollisionHelper bch);
 
 	@Override
-	public IIcon getBreakingTexture() {
+	public TextureAtlasSprite getBreakingTexture() {
 		return TextureManager.BUS_SIDE.getTexture();
 	}
 
 	@Override
-	public AECableType getCableConnectionType(ForgeDirection dir) {
+	public AECableType getCableConnectionType(AEPartLocation dir) {
 		return AECableType.GLASS;
 	}
 
@@ -173,7 +174,7 @@ public abstract class PartECBase implements IPart, IGridHost, IActionHost,
 	}
 
 	@Override
-	public final IGridNode getGridNode(ForgeDirection dir) {
+	public final IGridNode getGridNode(AEPartLocation dir) {
 		return this.node;
 	}
 
@@ -205,8 +206,7 @@ public abstract class PartECBase implements IPart, IGridHost, IActionHost,
 	}
 
 	public final DimensionalCoord getLocation() {
-		return new DimensionalCoord(this.tile.getWorldObj(), this.tile.xCoord,
-				this.tile.yCoord, this.tile.zCoord);
+		return new DimensionalCoord(this.tile.getWorld(), this.tile.getPos());
 	}
 
 	public double getPowerUsage() {
@@ -217,7 +217,7 @@ public abstract class PartECBase implements IPart, IGridHost, IActionHost,
 		return null;
 	}
 
-	public ForgeDirection getSide() {
+	public AEPartLocation getSide() {
 		return this.side;
 	}
 
@@ -294,10 +294,11 @@ public abstract class PartECBase implements IPart, IGridHost, IActionHost,
 
 	@Override
 	public boolean onActivate(EntityPlayer player, Vec3 pos) {
-		if (player != null && player instanceof EntityPlayerMP)
-			GuiHandler.launchGui(GuiHandler.getGuiId(this), player,
-					this.hostTile.getWorldObj(), this.hostTile.xCoord,
-					this.hostTile.yCoord, this.hostTile.zCoord);
+		if (player != null && player instanceof EntityPlayerMP){
+			BlockPos blockPos = this.hostTile.getPos();
+			GuiHandler.launchGui(GuiHandler.getGuiId(this), player, this.hostTile.getWorld(), blockPos.getX(), blockPos.getY(), blockPos.getZ());
+		}
+
 		return true;
 	}
 
@@ -307,7 +308,7 @@ public abstract class PartECBase implements IPart, IGridHost, IActionHost,
 	public boolean isValid() {
 		if (this.hostTile != null && this.hostTile.hasWorldObj()) {
 			DimensionalCoord loc = this.getLocation();
-			TileEntity host = this.hostTile.getWorldObj().getTileEntity(loc.x, loc.y, loc.z);
+			TileEntity host = this.hostTile.getWorld().getTileEntity(new BlockPos(loc.x, loc.y, loc.z));
 			if (host instanceof IPartHost) {
 				return ((IPartHost) host).getPart(this.side) == this;
 			}
@@ -320,12 +321,13 @@ public abstract class PartECBase implements IPart, IGridHost, IActionHost,
 	public void onNeighborChanged() {
 		if (this.hostTile == null)
 			return;
-		World world = this.hostTile.getWorldObj();
-		int x = this.hostTile.xCoord;
-		int y = this.hostTile.yCoord;
-		int z = this.hostTile.zCoord;
-		TileEntity tileEntity = world.getTileEntity(x + this.side.offsetX, y
-				+ this.side.offsetY, z + this.side.offsetZ);
+		World world = this.hostTile.getWorld();
+		BlockPos blockPos = this.hostTile.getPos();
+		int x = blockPos.getX();
+		int y = blockPos.getY();
+		int z = blockPos.getZ();
+		TileEntity tileEntity = world.getTileEntity(new BlockPos(x + this.side.xOffset, y
+				+ this.side.yOffset, z + this.side.zOffset));
 		this.facingTank = null;
 		if (tileEntity instanceof IFluidHandler)
 			this.facingTank = (IFluidHandler) tileEntity;
@@ -344,8 +346,7 @@ public abstract class PartECBase implements IPart, IGridHost, IActionHost,
 	}
 
 	@Override
-	public void onPlacement(EntityPlayer player, ItemStack held,
-			ForgeDirection side) {
+	public void onPlacement(EntityPlayer player, ItemStack held, AEPartLocation side) {
 		this.owner = player;
 	}
 
@@ -394,19 +395,19 @@ public abstract class PartECBase implements IPart, IGridHost, IActionHost,
 		Tessellator ts = Tessellator.instance;
 
 		rh.setInvColor(0xFFFFFF);
-		IIcon otherIcon = TextureManager.BUS_COLOR.getTextures()[0];
-		IIcon side = TextureManager.BUS_SIDE.getTexture();
+		TextureAtlasSprite otherIcon = TextureManager.BUS_COLOR.getTextures()[0];
+		TextureAtlasSprite side = TextureManager.BUS_SIDE.getTexture();
 		rh.setTexture(otherIcon, otherIcon, side, side, otherIcon, otherIcon);
 		rh.renderInventoryBox(renderer);
 
 		ts.setBrightness(13 << 20 | 13 << 4);
 		rh.setInvColor(AEColor.Transparent.blackVariant);
-		rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()[1], ForgeDirection.UP, renderer);
-		rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()[1], ForgeDirection.DOWN, renderer);
-		rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()[1], ForgeDirection.NORTH, renderer);
-		rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()[1], ForgeDirection.EAST, renderer);
-		rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()[1], ForgeDirection.SOUTH, renderer);
-		rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()[1], ForgeDirection.WEST, renderer);
+		rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()[1], EnumFacing.UP, renderer);
+		rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()[1], EnumFacing.DOWN, renderer);
+		rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()[1], EnumFacing.NORTH, renderer);
+		rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()[1], EnumFacing.EAST, renderer);
+		rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()[1], EnumFacing.SOUTH, renderer);
+		rh.renderInventoryFace(TextureManager.BUS_COLOR.getTextures()[1], EnumFacing.WEST, renderer);
 	}
 
 	@Override

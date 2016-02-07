@@ -1,7 +1,9 @@
 package extracells.render;
 
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.util.IIcon;
+import net.minecraft.util.ResourceLocation;
 
 public enum TextureManager {
 	BUS_SIDE(TextureType.PART, "bus_side"),
@@ -34,19 +36,19 @@ public enum TextureManager {
 	private TextureType textureType;
 	private String[] textureNames;
 
-	private IIcon[] textures;
+	private TextureAtlasSprite[] textures;
 
 	TextureManager(TextureType _textureType, String... _textureName) {
 		this.textureType = _textureType;
 		this.textureNames = _textureName;
-		this.textures = new IIcon[this.textureNames.length];
+		this.textures = new TextureAtlasSprite[this.textureNames.length];
 	}
 
-	public IIcon getTexture() {
+	public TextureAtlasSprite getTexture() {
 		return this.textures[0];
 	}
 
-	public IIcon[] getTextures() {
+	public TextureAtlasSprite[] getTextures() {
 		return this.textures;
 	}
 
@@ -58,12 +60,10 @@ public enum TextureManager {
 
 		for (int i = 0; i < this.textureNames.length; i++) {
 			if (this.textureType == TextureType.PART)
-				this.textures[i] = textureMap.registerIcon("extracells:part/"
-						+ this.textureNames[i]);
+				this.textures[i] = textureMap.registerSprite(new ResourceLocation("extracells:part/" + this.textureNames[i]));
 			if (this.textureType == TextureType.BLOCK
 					|| this.textureType == TextureType.ITEM)
-				this.textures[i] = textureMap.registerIcon("extracells:"
-						+ this.textureNames[i]);
+				this.textures[i] = textureMap.registerSprite(new ResourceLocation("extracells:" + this.textureNames[i]));
 		}
 	}
 }

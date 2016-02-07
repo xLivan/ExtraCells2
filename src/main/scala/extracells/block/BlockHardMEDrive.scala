@@ -7,7 +7,6 @@ import appeng.api.config.SecurityPermissions
 import appeng.api.implementations.items.IAEWrench
 import appeng.api.networking.IGridNode
 import buildcraft.api.tools.IToolWrench
-import cpw.mods.fml.relauncher.{Side, SideOnly}
 import extracells.container.ContainerHardMEDrive
 import extracells.gui.GuiHardMEDrive
 import extracells.network.GuiHandler
@@ -15,7 +14,6 @@ import extracells.render.block.RendererHardMEDrive
 import extracells.tileentity.TileEntityHardMeDrive
 import extracells.util.PermissionUtil
 import net.minecraft.block.Block
-import net.minecraft.client.renderer.texture.IIconRegister
 import net.minecraft.entity.EntityLivingBase
 import net.minecraft.entity.item.EntityItem
 import net.minecraft.entity.player.EntityPlayer
@@ -23,9 +21,9 @@ import net.minecraft.inventory.IInventory
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.NBTTagCompound
 import net.minecraft.tileentity.TileEntity
-import net.minecraft.util.{IIcon, MathHelper}
+import net.minecraft.util.MathHelper
 import net.minecraft.world.World
-import net.minecraftforge.common.util.ForgeDirection
+import net.minecraftforge.fml.relauncher.{Side, SideOnly}
 
 
 object BlockHardMEDrive extends BlockEC(net.minecraft.block.material.Material.rock, 2.0F, 1000000.0F) with TGuiBlock{
